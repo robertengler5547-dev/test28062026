@@ -6,29 +6,31 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#1a6b3c">
+<meta name="theme-color" content="#2a4030">
 <title>Mission Pfotenklick </title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
 <style>
   /* ===== TOKENS ===== */
   :root {
-    --jungle:    #1a6b3c;
-    --jungle-d:  #0e4224;
-    --jungle-l:  #e8f5ef;
-    --gold:      #f5a623;
-    --gold-d:    #c47f0a;
-    --gold-l:    #fff8e8;
-    --sky:       #3b9fd4;
-    --sky-l:     #e6f5ff;
-    --danger:    #d44e2e;
-    --success:   #2a9d4e;
-    --bg:        #f7f3ee;
-    --card:      #ffffff;
-    --text:      #1e1a14;
+    --jungle:    #3d5c45;
+    --jungle-d:  #2a4030;
+    --jungle-l:  #e8e0d0;
+    --gold:      #b8922a;
+    --gold-d:    #8a6d1e;
+    --gold-l:    #f5ecd6;
+    --sky:       #4a7c8c;
+    --sky-l:     #e6eef0;
+    --danger:    #9b3b3b;
+    --success:   #3d5c45;
+    --bg:        #f2e8d5;
+    --card:      #faf5eb;
+    --text:      #2a241c;
     --muted:     #6b5e4e;
-    --radius:    8px;
-    --radius-sm: 6px;
-    --shadow:    0 4px 20px rgba(0,0,0,0.12);
+    --accent-rosa: #d45fa0;
+    --paper-border: #d4c9b5;
+    --radius:    4px;
+    --radius-sm: 3px;
+    --shadow:    0 2px 12px rgba(42,36,28,0.1);
     --safe-top:    env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -38,8 +40,12 @@
   html { height: 100%; }
   body {
     height: 100%; overflow: hidden;
-    font-family: 'Nunito', sans-serif;
-    background: var(--bg); color: var(--text);
+    font-family: 'Source Serif 4', serif;
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 15% 40%, rgba(255,255,255,0.18) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 15%, rgba(42,36,28,0.04) 0%, transparent 45%);
+    color: var(--text);
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
     font-size: 16px;
@@ -68,7 +74,7 @@
   .top-bar-logo {
     width: 30px; height: 30px; object-fit: contain; flex-shrink: 0;
   }
-  .top-bar h1 { font-family: 'Fredoka One', cursive; font-size: 20px; flex: 1; letter-spacing: 0.5px; min-width: 0; }
+  .top-bar h1 { font-family: 'Fraunces', serif; font-size: 20px; flex: 1; letter-spacing: 0.5px; min-width: 0; }
   .top-bar .mission-count { font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 6px; white-space: nowrap; }
 
   /* ===== MAP BUTTON (Top Bar) ===== */
@@ -107,7 +113,7 @@
     padding: 18px 20px 16px; flex-shrink: 0;
     display: flex; align-items: center; gap: 10px;
   }
-  #map-modal-header h2, .map-modal-header-shell h2 { font-family: 'Fredoka One', cursive; font-size: 19px; flex: 1; }
+  #map-modal-header h2, .map-modal-header-shell h2 { font-family: 'Fraunces', serif; font-size: 19px; flex: 1; }
   #map-modal-header .map-close-btn, .map-modal-header-shell .map-close-btn {
     background: rgba(255,255,255,0.2); border: none; color: white;
     width: 36px; height: 36px; border-radius: 50%; font-size: 18px;
@@ -146,72 +152,23 @@
   }
   .gallery-empty-state span { font-size: 48px; display: block; margin-bottom: 12px; }
   .gallery-section-title {
-    font-family: 'Fredoka One', cursive; font-size: 14px; color: var(--jungle);
+    font-family: 'Fraunces', serif; font-size: 14px; color: var(--jungle);
     margin: 18px 0 10px;
   }
   .gallery-section-title:first-child { margin-top: 0; }
 
-  /* ===== MAP PIECE CARD ===== */
-  .map-piece {
-    background: var(--card); border-radius: var(--radius);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    margin-bottom: 16px; overflow: hidden;
-    border: 2px solid transparent; transition: border-color 0.2s;
+  /* ===== MAP PROGRESS DISPLAY ===== */
+  .map-progress-display { text-align: center; }
+  .map-progress-image {
+    width: 100%; height: auto; display: block;
+    border-radius: var(--radius);
+    box-shadow: 0 4px 20px rgba(42,36,28,0.18);
+    background: #111;
+    animation: mapReveal 0.6s ease;
   }
-  .map-piece.complete { border-color: var(--success); }
-  .map-piece-visual {
-    position: relative; padding: 22px 16px 16px;
-    text-align: center; overflow: hidden;
-  }
-  .map-piece-visual::before {
-    content: ''; position: absolute; inset: 0;
-    background: repeating-linear-gradient(135deg, rgba(0,0,0,0.02) 0 10px, transparent 10px 20px);
-  }
-  .map-piece-fragment {
-    font-size: 56px; position: relative; z-index: 1;
-    filter: grayscale(1) opacity(0.35);
-    transition: filter 0.6s ease;
-  }
-  .map-piece.complete .map-piece-fragment {
-    filter: grayscale(0) opacity(1);
-  }
-  .map-piece-fragment.revealing {
-    animation: fragmentReveal 0.8s ease forwards;
-  }
-  @keyframes fragmentReveal {
-    0% { filter: grayscale(1) opacity(0.35); transform: scale(1); }
-    50% { transform: scale(1.15); }
-    100% { filter: grayscale(0) opacity(1); transform: scale(1); }
-  }
-  .map-piece-badge {
-    position: relative; z-index: 1;
-    display: inline-block; margin-top: 8px;
-    font-family: 'Fredoka One', cursive; font-size: 12px;
-    padding: 4px 12px; border-radius: 6px;
-    background: #e8e0d8; color: var(--muted);
-  }
-  .map-piece.complete .map-piece-badge {
-    background: var(--success); color: white;
-  }
-  .map-piece-info { padding: 4px 18px 18px; }
-  .map-piece-title {
-    font-family: 'Fredoka One', cursive; font-size: 16px;
-    color: var(--jungle-d); margin-bottom: 4px;
-  }
-  .map-piece-desc { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
-  .map-piece-progress-row {
-    display: flex; align-items: center; gap: 10px;
-  }
-  .map-piece-bar {
-    flex: 1; height: 8px; background: #eee2d4; border-radius: 4px; overflow: hidden;
-  }
-  .map-piece-bar-fill {
-    height: 100%; background: var(--jungle); border-radius: 4px;
-    transition: width 0.5s ease;
-  }
-  .map-piece.complete .map-piece-bar-fill { background: var(--success); }
-  .map-piece-count {
-    font-size: 12px; font-weight: 800; color: var(--muted); white-space: nowrap;
+  @keyframes mapReveal {
+    from { opacity: 0.6; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
   }
 
   /* ===== PROGRESS BAR ===== */
@@ -219,21 +176,21 @@
   .progress-bar-fill { background: var(--gold); height: 5px; transition: width 0.5s ease; }
 
   /* ===== CARDS ===== */
-  .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; margin-bottom: 14px; }
-  .card-title { font-family: 'Fredoka One', cursive; font-size: 20px; color: var(--jungle); margin-bottom: 8px; }
+  .card { background: var(--card); border: 1px solid var(--paper-border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; margin-bottom: 14px; }
+  .card-title { font-family: 'Fraunces', serif; font-size: 20px; color: var(--jungle); margin-bottom: 8px; }
   .card-text { font-size: 15px; color: var(--muted); line-height: 1.6; }
 
   /* ===== BUTTONS — min 48px touch target ===== */
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 16px;
-    min-height: 52px; padding: 14px 24px; border-radius: 12px; border: none; cursor: pointer;
+    font-family: 'Source Serif 4', serif; font-weight: 700; font-size: 16px;
+    min-height: 52px; padding: 14px 24px; border-radius: var(--radius); border: none; cursor: pointer;
     transition: transform 0.12s, opacity 0.12s; text-decoration: none; width: 100%;
     -webkit-appearance: none;
   }
   .btn:active { transform: scale(0.96); opacity: 0.88; }
-  .btn-primary { background: var(--jungle); color: white; box-shadow: 0 4px 16px rgba(26,107,60,0.35); }
-  .btn-gold { background: var(--gold); color: white; box-shadow: 0 4px 16px rgba(245,166,35,0.4); }
+  .btn-primary { background: var(--jungle); color: white; box-shadow: 0 3px 12px rgba(42,64,48,0.3); }
+  .btn-gold { background: var(--gold); color: white; box-shadow: 0 3px 12px rgba(184,146,42,0.35); }
   .btn-sky { background: var(--sky); color: white; }
   .btn-outline { background: transparent; color: var(--jungle); border: 2.5px solid var(--jungle); }
   .btn-sm { min-height: 44px; padding: 10px 18px; font-size: 14px; }
@@ -250,23 +207,30 @@
   }
   .mode-card.selected { border-color: var(--gold); background: rgba(245,166,35,0.18); }
   .mode-card .icon { font-size: 36px; display: block; margin-bottom: 6px; }
-  .mode-card h3 { font-family: 'Fredoka One', cursive; font-size: 17px; color: white; }
+  .mode-card h3 { font-family: 'Fraunces', serif; font-size: 17px; color: white; }
   .mode-card p { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 3px; }
 
   /* ===== MISSION DETAIL HEADER ===== */
   .mission-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-  .mission-badge { background: var(--gold); color: white; font-family: 'Fredoka One', cursive; font-size: 12px; padding: 4px 12px; border-radius: 6px; white-space: nowrap; }
-  .mission-title { font-family: 'Fredoka One', cursive; font-size: 22px; color: var(--jungle-d); line-height: 1.2; margin-bottom: 12px; }
+  .mission-badge {
+    background: transparent; color: var(--gold-d);
+    border: 2px solid var(--gold); font-family: 'Fraunces', serif;
+    font-size: 11px; padding: 3px 10px; border-radius: 2px;
+    white-space: nowrap; letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .mission-title { font-family: 'Fraunces', serif; font-size: 22px; color: var(--jungle-d); line-height: 1.2; margin-bottom: 12px; }
   .mission-desc { font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
 
   /* ===== STORY BOX ===== */
   .story-box {
-    background: var(--jungle-l); border-left: 4px solid var(--jungle);
+    background: var(--card); border: 1px solid var(--paper-border);
+    border-left: 3px solid var(--jungle);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     padding: 14px 16px; margin-bottom: 16px;
-    font-size: 15px; color: var(--jungle-d); line-height: 1.7;
+    font-size: 15px; color: var(--jungle-d); line-height: 1.75;
+    box-shadow: inset 0 0 30px rgba(255,250,240,0.6);
   }
-  .story-box .story-label { font-family: 'Fredoka One', cursive; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--jungle); margin-bottom: 6px; display: block; }
+  .story-box .story-label { font-family: 'Fraunces', serif; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--gold-d); margin-bottom: 6px; display: block; }
 
   /* ===== PHOTO / LIVE CAMERA ===== */
   .camera-wrapper { position: relative; border-radius: var(--radius); overflow: hidden; background: #111; margin-bottom: 12px; width: 100%; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; }
@@ -280,7 +244,7 @@
   .camera-controls { display: flex; gap: 10px; margin-bottom: 12px; }
   .shutter-btn {
     flex: 1; background: var(--jungle); color: white; border: none; border-radius: 12px;
-    min-height: 52px; padding: 14px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 16px;
+    min-height: 52px; padding: 14px; font-family: 'Source Serif 4', serif; font-weight: 700; font-size: 16px;
     cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
     box-shadow: 0 4px 16px rgba(26,107,60,0.35); transition: transform 0.12s; -webkit-appearance: none;
   }
@@ -300,9 +264,9 @@
   /* ===== CHOICE / QUIZ ===== */
   .choice-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
   .choice-btn {
-    background: white; border: 2px solid #e0d8d0; border-radius: var(--radius-sm);
+    background: var(--card); border: 2px solid var(--paper-border); border-radius: var(--radius-sm);
     min-height: 52px; padding: 14px 16px;
-    font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700;
+    font-family: 'Source Serif 4', serif; font-size: 15px; font-weight: 600;
     cursor: pointer; text-align: left; transition: background 0.12s; color: var(--text);
     width: 100%; line-height: 1.4; -webkit-appearance: none;
   }
@@ -312,8 +276,8 @@
 
   /* ===== TEXT INPUT ===== */
   .text-input-area {
-    width: 100%; border: 2px solid #e0d8d0; border-radius: var(--radius-sm);
-    padding: 14px; font-family: 'Nunito', sans-serif;
+    width: 100%; border: 2px solid var(--paper-border); border-radius: var(--radius-sm);
+    padding: 14px; font-family: 'Source Serif 4', serif;
     font-size: 16px; color: var(--text); resize: none; min-height: 110px;
     outline: none; transition: border-color 0.2s; margin-bottom: 12px;
     -webkit-appearance: none; appearance: none;
@@ -325,7 +289,7 @@
   .match-col { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
   .match-col h4 { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 2px; }
   .match-item {
-    background: white; border: 2px solid #e0d8d0; border-radius: var(--radius-sm);
+    background: var(--card); border: 2px solid var(--paper-border); border-radius: var(--radius-sm);
     padding: 12px 8px; font-size: 13px; font-weight: 700; cursor: pointer;
     transition: background 0.12s; user-select: none; text-align: center;
     min-height: 48px; display: flex; align-items: center; justify-content: center;
@@ -358,7 +322,7 @@
 
   /* ===== BOTTOM NAV ===== */
   .bottom-nav {
-    background: white; border-top: 1px solid #e8e0d8;
+    background: var(--card); border-top: 1px solid var(--paper-border);
     padding: 12px 16px; padding-bottom: calc(12px + var(--safe-bottom));
     display: flex; gap: 10px; flex-shrink: 0;
   }
@@ -383,7 +347,7 @@
   .completion { text-align: center; padding: 32px 16px; }
   .completion .trophy { font-size: 72px; animation: pop 0.5s cubic-bezier(0.34,1.56,0.64,1); display: block; }
   @keyframes pop { 0%{transform:scale(0)} 100%{transform:scale(1)} }
-  .completion h2 { font-family: 'Fredoka One', cursive; font-size: 30px; color: var(--jungle); margin: 14px 0 8px; }
+  .completion h2 { font-family: 'Fraunces', serif; font-size: 30px; color: var(--jungle); margin: 14px 0 8px; }
   .completion p { color: var(--muted); font-size: 15px; margin-bottom: 20px; line-height: 1.6; }
 
   /* ===== AUDIO BAR ===== */
@@ -399,7 +363,7 @@
   /* ===== INTRO OVERLAY ===== */
   #intro-overlay {
     position: fixed; inset: 0;
-    background: linear-gradient(160deg, #0a3d20 0%, #1a6b3c 100%);
+    background: #2a4030;
     display: flex; flex-direction: column; align-items: center;
     z-index: 9999; color: white;
     overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -409,7 +373,7 @@
     width: 100%; max-width: 420px;
     display: flex; flex-direction: column; align-items: center; text-align: center; margin: auto;
   }
-  #intro-overlay h1 { font-family: 'Fredoka One', cursive; font-size: 34px; margin-bottom: 8px; line-height: 1.1; }
+  #intro-overlay h1 { font-family: 'Fraunces', serif; font-size: 34px; margin-bottom: 8px; line-height: 1.1; }
   #intro-overlay p { font-size: 15px; opacity: 0.85; line-height: 1.7; margin: 0 0 18px; }
   #intro-overlay .skip-btn { font-size: 13px; opacity: 0.6; cursor: pointer; text-decoration: underline; margin-top: 12px; min-height: 44px; display: flex; align-items: center; }
   .intro-partner-logo {
@@ -422,7 +386,7 @@
     border: 2px solid rgba(255,255,255,0.35); border-radius: 7px;
     background: rgba(255,255,255,0.12); color: white;
     font-size: 16px; padding: 14px 16px;
-    font-family: 'Nunito', sans-serif; width: 100%;
+    font-family: 'Source Serif 4', serif; width: 100%;
     outline: none; margin-bottom: 10px; font-weight: 600;
     -webkit-appearance: none; min-height: 52px;
   }
@@ -615,7 +579,7 @@
     border-radius: 12px;
     padding: 0 20px;
     height: 52px;
-    font-family: 'Nunito', sans-serif;
+    font-family: 'Source Serif 4', serif;
     font-weight: 800;
     font-size: 15px;
     cursor: pointer;
@@ -631,7 +595,7 @@
   .team-input {
     border: 2px solid rgba(255,255,255,0.3); border-radius: 6px;
     background: rgba(255,255,255,0.1); color: white; font-size: 16px;
-    padding: 12px 16px; font-family: 'Nunito', sans-serif; width: 100%;
+    padding: 12px 16px; font-family: 'Source Serif 4', serif; width: 100%;
     outline: none; margin-bottom: 10px; font-weight: 600;
   }
   .team-input::placeholder { color: rgba(255,255,255,0.5); }
@@ -685,7 +649,7 @@
   /* ===== STORY OVERLAY ===== */
   #story-overlay {
     position: fixed; inset: 0; z-index: 9998; display: none;
-    background: linear-gradient(160deg, #0a3d20 0%, #1a6b3c 100%);
+    background: #2a4030;
     flex-direction: column; color: white;
   }
   #story-overlay.active { display: flex; }
@@ -695,7 +659,7 @@
     flex-shrink: 0;
   }
   #story-overlay .story-topbar h2 {
-    font-family: 'Fredoka One', cursive; font-size: 18px; flex: 1; opacity: 0.9;
+    font-family: 'Fraunces', serif; font-size: 18px; flex: 1; opacity: 0.9;
   }
   #story-overlay .story-scroll {
     flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -714,11 +678,11 @@
     border-radius: 6px; padding: 4px 6px; margin-left: -6px; margin-right: -6px;
   }
   #story-overlay .story-paragraph.active-line {
-    background: rgba(245,166,35,0.18); opacity: 1;
+    background: rgba(184,146,42,0.2); opacity: 1;
   }
   #story-overlay .story-paragraph:last-child { margin-bottom: 0; }
   #story-overlay .story-heading {
-    font-family: 'Fredoka One', cursive; font-size: 16px; color: var(--gold);
+    font-family: 'Fraunces', serif; font-size: 16px; color: var(--gold);
     margin: 18px 0 8px; letter-spacing: 0.3px;
   }
   #story-overlay .story-heading:first-child { margin-top: 0; }
@@ -754,14 +718,14 @@
     <div style="width:160px;height:160px;margin-bottom:20px;flex-shrink:0;border-radius:24px;overflow:hidden;"><img src="assets/logo-intro.png" alt="Mission Pfotenklick Logo" style="width:100%;height:100%;object-fit:contain;display:block;border-radius:24px;"></div>
 
     <!-- App-Name -->
-    <h1 style="font-family:'Fredoka One',cursive;font-size:36px;color:white;line-height:1.1;margin-bottom:4px;text-shadow:0 2px 12px rgba(0,0,0,0.3)">Mission Pfotenklick!</h1>
+    <h1 style="font-family:'Fraunces',serif;font-size:36px;color:white;line-height:1.1;margin-bottom:4px;text-shadow:0 2px 12px rgba(0,0,0,0.3)">Mission Pfotenklick!</h1>
 
     <!-- Divider -->
     <div style="width:60px;height:3px;background:var(--gold);border-radius:3px;margin:10px auto 14px;"></div>
 
     <!-- Zoo-Info -->
     <div style="background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.2);border-radius:16px;padding:14px 20px;margin-bottom:20px;width:100%;">
-      <p style="font-family:'Fredoka One',cursive;font-size:17px;color:white;opacity:1;margin:0 0 4px;letter-spacing:0.3px"> Naturzoo Rheine</p>
+      <p style="font-family:'Fraunces',serif;font-size:17px;color:white;opacity:1;margin:0 0 4px;letter-spacing:0.3px"> Naturzoo Rheine</p>
       <p style="font-size:13px;opacity:0.75;margin:0;line-height:1.6">Salinenstraße 150 · 48432 Rheine</p>
     </div>
 
@@ -1445,6 +1409,12 @@ const MISSIONS = [
    Teil 2: Tiger → Kamel → Zebra/Antilope → Click&Match (bis #16, "Tier-Zuordnung")
    Teil 3: Zweiter Kartenteil → Vogelhaus → Eulen → Uhu → Goldschakal → Pinguine/Robben/Otter → Flamingos (bis #42)
 ====================================================== */
+const MAP_IMAGES = [
+  'assets/map-1.png',
+  'assets/map-2.png',
+  'assets/map-3.png',
+];
+
 const MAP_PIECES = [
   {
     key: 'teil1',
@@ -1475,6 +1445,12 @@ function getMapPieceProgress(piece) {
   return { done, total, isComplete: done === total };
 }
 
+function getCurrentMapImageIndex() {
+  if (getMapPieceProgress(MAP_PIECES[1]).isComplete) return 2;
+  if (getMapPieceProgress(MAP_PIECES[0]).isComplete) return 1;
+  return 0;
+}
+
 function openMapModal() {
   renderMapModal();
   document.getElementById('map-modal-overlay').classList.add('open');
@@ -1487,26 +1463,8 @@ function closeMapModal() {
 function renderMapModal() {
   const container = document.getElementById('map-pieces-container');
   if (!container) return;
-  container.innerHTML = MAP_PIECES.map(piece => {
-    const { done, total, isComplete } = getMapPieceProgress(piece);
-    const pct = Math.round((done / total) * 100);
-    return `
-      <div class="map-piece ${isComplete ? 'complete' : ''}">
-        <div class="map-piece-visual">
-          <span class="map-piece-fragment">${piece.icon}</span><br>
-          <span class="map-piece-badge">${isComplete ? 'Vollständig' : 'In Arbeit'}</span>
-        </div>
-        <div class="map-piece-info">
-          <div class="map-piece-title">${piece.title}</div>
-          <div class="map-piece-desc">${piece.desc}</div>
-          <div class="map-piece-progress-row">
-            <div class="map-piece-bar"><div class="map-piece-bar-fill" style="width:${pct}%"></div></div>
-            <span class="map-piece-count">${done} / ${total}</span>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
+  const idx = getCurrentMapImageIndex();
+  container.innerHTML = `<div class="map-progress-display"><img src="${MAP_IMAGES[idx]}" alt="" class="map-progress-image"></div>`;
 }
 
 function updateMapButtonIndicator() {
@@ -2035,7 +1993,7 @@ function renderPhoto(m) {
 
       <div id="cam-start-area-${m.id}">
         <button onclick="startCamera(${m.id})"
-          style="display:flex;align-items:center;justify-content:center;gap:10px;background:var(--jungle);color:white;border:none;border-radius:50px;min-height:56px;width:100%;font-family:'Nunito',sans-serif;font-weight:800;font-size:17px;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 16px rgba(26,107,60,0.4);">
+          style="display:flex;align-items:center;justify-content:center;gap:10px;background:var(--jungle);color:white;border:none;border-radius:50px;min-height:56px;width:100%;font-family:'Source Serif 4',serif;font-weight:800;font-size:17px;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 16px rgba(26,107,60,0.4);">
           Kamera starten
         </button>
       </div>
@@ -2051,7 +2009,7 @@ function renderPhoto(m) {
         <div style="flex:1;height:1px;background:#e0d8d0;"></div>
       </div>
 
-      <label style="display:flex;align-items:center;justify-content:center;gap:10px;background:white;color:var(--jungle);border:2.5px solid var(--jungle);border-radius:50px;min-height:48px;font-family:'Nunito',sans-serif;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:12px;">
+      <label style="display:flex;align-items:center;justify-content:center;gap:10px;background:white;color:var(--jungle);border:2.5px solid var(--jungle);border-radius:50px;min-height:48px;font-family:'Source Serif 4',serif;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:12px;">
         Foto aus Galerie hinzufügen
         <input type="file" accept="image/*" style="display:none;" onchange="handleGalleryFilePhoto(event,${m.id})">
       </label>
@@ -2100,7 +2058,7 @@ function renderPhoto(m) {
     <!-- Kamera starten Button -->
     <div id="cam-start-area-${m.id}">
       <button onclick="startCamera(${m.id})"
-        style="display:flex;align-items:center;justify-content:center;gap:10px;background:var(--jungle);color:white;border:none;border-radius:50px;min-height:56px;width:100%;font-family:'Nunito',sans-serif;font-weight:800;font-size:17px;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 16px rgba(26,107,60,0.4);">
+        style="display:flex;align-items:center;justify-content:center;gap:10px;background:var(--jungle);color:white;border:none;border-radius:50px;min-height:56px;width:100%;font-family:'Source Serif 4',serif;font-weight:800;font-size:17px;cursor:pointer;margin-bottom:10px;box-shadow:0 4px 16px rgba(26,107,60,0.4);">
         Kamera starten
       </button>
     </div>
@@ -2119,7 +2077,7 @@ function renderPhoto(m) {
     </div>
 
     <!-- Galerie -->
-    <label style="display:flex;align-items:center;justify-content:center;gap:10px;background:white;color:var(--jungle);border:2.5px solid var(--jungle);border-radius:50px;min-height:48px;font-family:'Nunito',sans-serif;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:12px;">
+    <label style="display:flex;align-items:center;justify-content:center;gap:10px;background:white;color:var(--jungle);border:2.5px solid var(--jungle);border-radius:50px;min-height:48px;font-family:'Source Serif 4',serif;font-weight:700;font-size:15px;cursor:pointer;margin-bottom:12px;">
       Foto aus Galerie wählen
       <input type="file" accept="image/*" style="display:none;" onchange="handleFilePhoto(event,${m.id})">
     </label>
@@ -2729,7 +2687,7 @@ function updateNextMissionPopup() {
   preview.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
       <div>
-        <div style="font-family:'Fredoka One',cursive;font-size:18px;color:var(--jungle-d)">${next.title}</div>
+        <div style="font-family:'Fraunces',serif;font-size:18px;color:var(--jungle-d)">${next.title}</div>
         <span class="mission-badge">${next.badge}</span>
       </div>
     </div>
