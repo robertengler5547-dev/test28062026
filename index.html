@@ -62,7 +62,13 @@
     padding: 12px 16px; padding-top: calc(12px + var(--safe-top));
     display: flex; align-items: center; gap: 12px; flex-shrink: 0; z-index: 10;
   }
-  .top-bar h1 { font-family: 'Fredoka One', cursive; font-size: 20px; flex: 1; letter-spacing: 0.5px; }
+  .top-bar-brand {
+    display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;
+  }
+  .top-bar-logo {
+    width: 30px; height: 30px; object-fit: contain; flex-shrink: 0;
+  }
+  .top-bar h1 { font-family: 'Fredoka One', cursive; font-size: 20px; flex: 1; letter-spacing: 0.5px; min-width: 0; }
   .top-bar .mission-count { font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 6px; white-space: nowrap; }
 
   /* ===== MAP BUTTON (Top Bar) ===== */
@@ -406,6 +412,10 @@
   #intro-overlay h1 { font-family: 'Fredoka One', cursive; font-size: 34px; margin-bottom: 8px; line-height: 1.1; }
   #intro-overlay p { font-size: 15px; opacity: 0.85; line-height: 1.7; margin: 0 0 18px; }
   #intro-overlay .skip-btn { font-size: 13px; opacity: 0.6; cursor: pointer; text-decoration: underline; margin-top: 12px; min-height: 44px; display: flex; align-items: center; }
+  .intro-partner-logo {
+    width: 56px; height: 56px; object-fit: contain;
+    margin-top: 14px; opacity: 0.9;
+  }
 
   /* ===== TEAM INPUT ===== */
   .team-input {
@@ -785,6 +795,7 @@
     <p style="font-size:11px;opacity:0.45;margin-top:20px;line-height:1.6;text-align:center">
       Ein Projekt des Projektkurses am Emsland Gymnasium<br>in Kollaboration mit dem Naturzoo Rheine
     </p>
+    <img src="assets/partner-logo.png" alt="Emsland Gymnasium" class="intro-partner-logo">
 
   </div>
 </div>
@@ -829,7 +840,10 @@
 
   <!-- TOP BAR -->
   <div class="top-bar" id="top-bar" style="display:none">
-    <h1>Pfotenklick</h1>
+    <div class="top-bar-brand">
+      <img src="assets/partner-logo.png" alt="" class="top-bar-logo">
+      <h1>Pfotenklick</h1>
+    </div>
     <button class="map-btn" id="gallery-btn" onclick="openGalleryModal()" title="Fotogalerie ansehen">
       🖼️<span class="map-btn-dot" id="gallery-btn-dot"></span>
     </button>
