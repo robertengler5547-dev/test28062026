@@ -523,7 +523,7 @@
   /* ===== MISSION POPUP ===== */
   #mission-popup {
     position: fixed;
-    bottom: calc(76px + var(--safe-bottom));
+    bottom: calc(92px + var(--safe-bottom));
     right: 16px;
     width: min(420px, calc(100vw - 32px));
     background: var(--card);
@@ -533,7 +533,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: transform 0.35s cubic-bezier(0.34,1.1,0.64,1), height 0.35s cubic-bezier(0.34,1.1,0.64,1), width 0.35s cubic-bezier(0.34,1.1,0.64,1), box-shadow 0.25s, border-radius 0.35s;
+    transition: height 0.35s cubic-bezier(0.34,1.1,0.64,1), width 0.35s cubic-bezier(0.34,1.1,0.64,1), box-shadow 0.25s, border-radius 0.35s;
     height: 64px;
     border: 1.5px solid rgba(0,0,0,0.07);
   }
@@ -541,34 +541,27 @@
     height: min(70vh, 580px);
     box-shadow: 0 16px 60px rgba(0,0,0,0.28);
   }
-  /* Auf kleinen Screens: geschlossene Vorschau deutlich kompakter,
-     damit sie den "Abschließen"-Button nicht verdeckt */
+  /* Auf kleinen Screens: kompakte Vorschau-Karte über der Bottom-Nav */
   @media (max-width: 600px) {
     #mission-popup {
-      --popup-lift: 132px;
-      width: 56px !important;
+      width: min(280px, calc(100vw - 56px)) !important;
       right: 12px !important;
-      bottom: calc(16px + var(--safe-bottom)) !important;
-      transform: translateY(calc(-1 * var(--popup-lift)));
-      border-radius: 50% !important;
-      height: 56px !important;
+      bottom: calc(92px + var(--safe-bottom)) !important;
+      height: 64px !important;
+      border-radius: 6px !important;
+      transform: none;
     }
     #mission-popup.open {
-      width: min(380px, calc(100vw - 24px)) !important;
+      width: min(320px, calc(100vw - 32px)) !important;
       right: 12px !important;
-      bottom: calc(16px + var(--safe-bottom)) !important;
-      transform: translateY(0);
-      border-radius: 6px !important;
-      height: min(68vh, 560px) !important;
+      bottom: calc(92px + var(--safe-bottom)) !important;
+      transform: none;
+      height: min(55vh, 480px) !important;
     }
-    #mission-popup-handle { padding: 0; justify-content: center; }
-    #mission-popup.open #mission-popup-handle { padding: 0 16px; justify-content: space-between; }
-    #mission-popup-preview { display: none; }
-    #mission-popup.open #mission-popup-preview { display: flex; }
-    #popup-emoji-collapsed { display: flex; font-size: 24px; align-items: center; justify-content: center; width: 100%; height: 100%; }
-    #mission-popup.open #popup-emoji-collapsed { display: none; }
-    #popup-chevron { display: none; }
-    #mission-popup.open #popup-chevron { display: inline; }
+    #mission-popup-handle { padding: 0 14px; justify-content: space-between; }
+    #mission-popup-preview { display: flex; }
+    #popup-emoji-collapsed { display: none; }
+    #popup-chevron { display: inline; }
   }
   #mission-popup-handle {
     display: flex;
