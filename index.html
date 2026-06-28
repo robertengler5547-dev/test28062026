@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#2a4030">
 <title>Mission Pfotenklick </title>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
 <style>
   /* ===== TOKENS ===== */
@@ -166,10 +168,52 @@
     box-shadow: 0 4px 20px rgba(42,36,28,0.18);
     background: #111;
     animation: mapReveal 0.6s ease;
+    cursor: zoom-in;
   }
   @keyframes mapReveal {
     from { opacity: 0.6; transform: scale(0.98); }
     to { opacity: 1; transform: scale(1); }
+  }
+  .map-progress-hint {
+    font-size: 12px; color: var(--muted); text-align: center;
+    margin-top: 10px; font-style: italic;
+  }
+
+  /* ===== MAP LIGHTBOX ===== */
+  #map-lightbox {
+    position: fixed; inset: 0; z-index: 10050; display: none;
+    background: rgba(0,0,0,0.92); align-items: center; justify-content: center;
+    padding: calc(16px + var(--safe-top)) 16px calc(16px + var(--safe-bottom));
+  }
+  #map-lightbox.open { display: flex; }
+  #map-lightbox img {
+    max-width: 100%; max-height: 100%; object-fit: contain;
+    border-radius: var(--radius); box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+  .map-lightbox-close {
+    position: absolute; top: calc(12px + var(--safe-top)); right: 12px;
+    background: rgba(255,255,255,0.15); border: none; color: white;
+    width: 44px; height: 44px; border-radius: 50%; font-size: 24px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ===== TEAM SETUP (Intro) ===== */
+  #team-setup { width: 100%; margin-bottom: 14px; }
+  .team-tab-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .team-tab-btn {
+    flex: 1; min-height: 44px; font-size: 14px; font-weight: 700;
+    background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.25);
+    border-radius: var(--radius); color: white; cursor: pointer;
+    font-family: 'Source Serif 4', serif;
+  }
+  .team-tab-btn.active { border-color: var(--gold); background: rgba(184,146,42,0.2); }
+  .team-connected-box {
+    background: rgba(184,146,42,0.15); border: 1.5px solid var(--gold);
+    border-radius: var(--radius); padding: 12px; margin-top: 10px; text-align: center;
+  }
+  .team-code-big {
+    font-family: 'Fraunces', serif; font-size: 26px; letter-spacing: 5px;
+    color: var(--gold); margin: 4px 0;
   }
 
   /* ===== PROGRESS BAR ===== */
@@ -753,6 +797,26 @@
       </div>
     </div>
 
+    <!-- Team: Erstellen / Beitreten -->
+    <div id="team-setup" style="display:none">
+      <div class="team-tab-row">
+        <button type="button" class="team-tab-btn active" id="team-tab-create" onclick="setTeamTab('create')">Team erstellen</button>
+        <button type="button" class="team-tab-btn" id="team-tab-join" onclick="setTeamTab('join')">Beitreten</button>
+      </div>
+      <div id="team-panel-create">
+        <button type="button" class="btn btn-outline" onclick="createTeam()" style="color:white;border-color:var(--gold);min-height:48px;">Team erstellen</button>
+      </div>
+      <div id="team-panel-join" style="display:none">
+        <input class="team-input" id="team-code-input" type="text" placeholder="6-stelliger Code" maxlength="6" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:4px;text-align:center;font-weight:700;margin-bottom:8px;">
+        <button type="button" class="btn btn-outline" onclick="joinTeam()" style="color:white;border-color:var(--gold);min-height:48px;">Team beitreten</button>
+      </div>
+      <div id="team-connected" class="team-connected-box" style="display:none">
+        <p style="font-size:13px;margin:0 0 2px;opacity:0.85;">Team-Code zum Teilen:</p>
+        <div class="team-code-big" id="team-code-display"></div>
+        <p style="font-size:12px;margin:0;opacity:0.7;" id="team-name-display"></p>
+      </div>
+    </div>
+
     <button class="btn btn-gold" onclick="goToStory()" style="max-width:360px"> Abenteuer starten!</button>
     <span class="skip-btn" onclick="startAdventure()">Story überspringen →</span>
 
@@ -799,6 +863,12 @@
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- MAP LIGHTBOX -->
+<div id="map-lightbox" onclick="if(event.target===this) closeMapLightbox()">
+  <button type="button" class="map-lightbox-close" onclick="closeMapLightbox()" aria-label="Schließen">×</button>
+  <img id="map-lightbox-img" src="" alt="">
+</div>
 
 <!-- APP -->
 <div id="app">
@@ -1460,6 +1530,7 @@ function openMapModal() {
 }
 
 function closeMapModal() {
+  closeMapLightbox();
   document.getElementById('map-modal-overlay').classList.remove('open');
 }
 
@@ -1471,7 +1542,25 @@ function renderMapModal() {
     container.innerHTML = `<div class="map-progress-display map-progress-empty"></div>`;
     return;
   }
-  container.innerHTML = `<div class="map-progress-display"><img src="${MAP_IMAGES[idx]}" alt="" class="map-progress-image"></div>`;
+  const src = MAP_IMAGES[idx];
+  container.innerHTML = `
+    <div class="map-progress-display">
+      <img src="${src}" alt="" class="map-progress-image" onclick="openMapLightbox('${src}')">
+      <p class="map-progress-hint">Tippen zum Vergrößern</p>
+    </div>`;
+}
+
+function openMapLightbox(src) {
+  const lb = document.getElementById('map-lightbox');
+  const img = document.getElementById('map-lightbox-img');
+  if (!lb || !img) return;
+  img.src = src;
+  lb.classList.add('open');
+}
+
+function closeMapLightbox() {
+  const lb = document.getElementById('map-lightbox');
+  if (lb) lb.classList.remove('open');
 }
 
 function updateMapButtonIndicator() {
@@ -1601,6 +1690,290 @@ function updateGalleryButtonIndicator() {
    STATE & PERSISTENCE
 ====================================================== */
 const STORAGE_KEY = 'pfotenklick_v2';
+const TEAMS_REGISTRY_KEY = 'pfotenklick_teams_registry';
+
+// Firebase für Team-Sync über mehrere Handys — Konfiguration eintragen:
+const FIREBASE_CONFIG = {
+  apiKey: '',
+  authDomain: '',
+  databaseURL: '',
+  projectId: '',
+};
+
+let firebaseDb = null;
+let _suppressTeamPush = false;
+let _teamUnsubscribe = null;
+let _teamPollTimer = null;
+
+function initFirebase() {
+  if (firebaseDb) return true;
+  if (!FIREBASE_CONFIG.databaseURL || typeof firebase === 'undefined') return false;
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseDb = firebase.database();
+    return true;
+  } catch (e) { return false; }
+}
+
+function isFirebaseReady() { return !!initFirebase(); }
+
+function generateTeamCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+function getTeamsRegistry() {
+  try { return JSON.parse(localStorage.getItem(TEAMS_REGISTRY_KEY)) || {}; }
+  catch (e) { return {}; }
+}
+
+function saveTeamsRegistry(reg) {
+  try { localStorage.setItem(TEAMS_REGISTRY_KEY, JSON.stringify(reg)); } catch (e) {}
+}
+
+function getTeamProgressPayload() {
+  return {
+    playerName: STATE.playerName,
+    completed: STATE.completed || {},
+    skipped: STATE.skipped || {},
+    answers: STATE.answers || {},
+    gpsStatus: STATE.gpsStatus || {},
+    matchResults: STATE.matchResults || {},
+    currentMissionId: currentMissionId,
+    updatedAt: Date.now(),
+  };
+}
+
+function mergeTeamProgress(remote) {
+  if (!remote) return;
+  STATE.completed = { ...(STATE.completed || {}), ...(remote.completed || {}) };
+  STATE.skipped = { ...(STATE.skipped || {}), ...(remote.skipped || {}) };
+  STATE.answers = { ...(STATE.answers || {}), ...(remote.answers || {}) };
+  STATE.gpsStatus = { ...(STATE.gpsStatus || {}), ...(remote.gpsStatus || {}) };
+  if (remote.matchResults) {
+    STATE.matchResults = STATE.matchResults || {};
+    Object.keys(remote.matchResults).forEach(k => {
+      STATE.matchResults[k] = { ...(remote.matchResults[k] || {}), ...(STATE.matchResults[k] || {}) };
+    });
+  }
+  if (remote.playerName && !document.getElementById('player-name-input')?.value.trim()) {
+    STATE.playerName = remote.playerName;
+  }
+  if (remote.currentMissionId != null && currentMissionId === null) {
+    currentMissionId = remote.currentMissionId;
+  }
+}
+
+async function readTeamFromCloud(code) {
+  if (isFirebaseReady()) {
+    const snap = await firebaseDb.ref('pfotenklick_teams/' + code).once('value');
+    return snap.val();
+  }
+  const reg = getTeamsRegistry();
+  return reg[code] || null;
+}
+
+async function writeTeamToCloud(code, data) {
+  if (isFirebaseReady()) {
+    await firebaseDb.ref('pfotenklick_teams/' + code).set(data);
+    return;
+  }
+  const reg = getTeamsRegistry();
+  reg[code] = data;
+  saveTeamsRegistry(reg);
+}
+
+async function updateTeamProgressInCloud(code) {
+  const payload = getTeamProgressPayload();
+  if (isFirebaseReady()) {
+    await firebaseDb.ref('pfotenklick_teams/' + code + '/progress').set(payload);
+    return;
+  }
+  const reg = getTeamsRegistry();
+  if (reg[code]) {
+    reg[code].progress = payload;
+    reg[code].updatedAt = Date.now();
+    saveTeamsRegistry(reg);
+  }
+}
+
+async function deleteTeamFromCloud(code) {
+  if (isFirebaseReady()) {
+    await firebaseDb.ref('pfotenklick_teams/' + code).remove();
+    return;
+  }
+  const reg = getTeamsRegistry();
+  delete reg[code];
+  saveTeamsRegistry(reg);
+}
+
+function refreshUIAfterTeamSync() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); } catch (e) {}
+  updateProgressBar();
+  if (currentMissionId !== null) {
+    const m = MISSIONS.find(x => x.id === currentMissionId);
+    const content = document.getElementById('mission-content');
+    if (content && m) content.innerHTML = renderMission(m);
+  } else {
+    renderMissionList();
+  }
+}
+
+function subscribeTeamSync(code) {
+  unsubscribeTeamSync();
+  if (!code) return;
+
+  if (isFirebaseReady()) {
+    const ref = firebaseDb.ref('pfotenklick_teams/' + code);
+    const handler = snap => {
+      const data = snap.val();
+      if (!data || !data.progress || _suppressTeamPush) return;
+      _suppressTeamPush = true;
+      mergeTeamProgress(data.progress);
+      _suppressTeamPush = false;
+      refreshUIAfterTeamSync();
+    };
+    ref.on('value', handler);
+    _teamUnsubscribe = () => ref.off('value', handler);
+    return;
+  }
+
+  _teamPollTimer = setInterval(async () => {
+    const data = await readTeamFromCloud(code);
+    if (!data || !data.progress) return;
+    _suppressTeamPush = true;
+    mergeTeamProgress(data.progress);
+    _suppressTeamPush = false;
+    refreshUIAfterTeamSync();
+  }, 3000);
+}
+
+function unsubscribeTeamSync() {
+  if (_teamUnsubscribe) { _teamUnsubscribe(); _teamUnsubscribe = null; }
+  if (_teamPollTimer) { clearInterval(_teamPollTimer); _teamPollTimer = null; }
+}
+
+async function pushTeamState() {
+  if (!STATE.teamCode || STATE.mode !== 'team') return;
+  try { await updateTeamProgressInCloud(STATE.teamCode); } catch (e) {}
+}
+
+async function deleteTeamIfComplete() {
+  if (STATE.mode !== 'team' || !STATE.teamCode) return;
+  if (doneCount() < MISSIONS.length) return;
+  const code = STATE.teamCode;
+  unsubscribeTeamSync();
+  try { await deleteTeamFromCloud(code); } catch (e) {}
+  STATE.teamCode = '';
+}
+
+function updateTeamSetupUI() {
+  const setup = document.getElementById('team-setup');
+  const connected = document.getElementById('team-connected');
+  const panelCreate = document.getElementById('team-panel-create');
+  const panelJoin = document.getElementById('team-panel-join');
+  const tabRow = document.querySelector('.team-tab-row');
+  if (!setup) return;
+
+  if (selectedMode === 'team') {
+    setup.style.display = 'block';
+    if (STATE.teamCode) {
+      if (connected) connected.style.display = 'block';
+      if (panelCreate) panelCreate.style.display = 'none';
+      if (panelJoin) panelJoin.style.display = 'none';
+      if (tabRow) tabRow.style.display = 'none';
+      const codeEl = document.getElementById('team-code-display');
+      const nameEl = document.getElementById('team-name-display');
+      if (codeEl) codeEl.textContent = STATE.teamCode;
+      if (nameEl) nameEl.textContent = STATE.playerName || '';
+    } else {
+      if (connected) connected.style.display = 'none';
+      if (tabRow) tabRow.style.display = 'flex';
+    }
+  } else {
+    setup.style.display = 'none';
+  }
+}
+
+function setTeamTab(tab) {
+  document.getElementById('team-tab-create')?.classList.toggle('active', tab === 'create');
+  document.getElementById('team-tab-join')?.classList.toggle('active', tab === 'join');
+  const pc = document.getElementById('team-panel-create');
+  const pj = document.getElementById('team-panel-join');
+  if (pc) pc.style.display = tab === 'create' ? 'block' : 'none';
+  if (pj) pj.style.display = tab === 'join' ? 'block' : 'none';
+}
+
+async function createTeam() {
+  const nameInput = document.getElementById('player-name-input');
+  const name = nameInput ? nameInput.value.trim() : '';
+  if (!name) { showToast('Bitte zuerst einen Teamnamen eingeben!'); return; }
+
+  let code = generateTeamCode();
+  let attempts = 0;
+  while (await readTeamFromCloud(code) && attempts < 10) {
+    code = generateTeamCode();
+    attempts++;
+  }
+
+  const data = {
+    name,
+    createdAt: Date.now(),
+    progress: getTeamProgressPayload(),
+  };
+
+  try {
+    await writeTeamToCloud(code, data);
+  } catch (e) {
+    showToast('Team konnte nicht erstellt werden.');
+    return;
+  }
+
+  STATE.teamCode = code;
+  STATE.playerName = name;
+  STATE.mode = 'team';
+  selectedMode = 'team';
+  subscribeTeamSync(code);
+  saveState();
+  updateTeamSetupUI();
+  showToast('Team erstellt! Code: ' + code);
+}
+
+async function joinTeam() {
+  const input = document.getElementById('team-code-input');
+  const code = (input ? input.value : '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 6) { showToast('Bitte einen 6-stelligen Code eingeben!'); return; }
+
+  const data = await readTeamFromCloud(code);
+  if (!data) {
+    showToast('Team nicht gefunden — Code prüfen!');
+    return;
+  }
+
+  STATE.teamCode = code;
+  STATE.mode = 'team';
+  selectedMode = 'team';
+  if (data.name) STATE.playerName = data.name;
+  if (data.progress) mergeTeamProgress(data.progress);
+
+  const nameInput = document.getElementById('player-name-input');
+  if (nameInput && STATE.playerName) nameInput.value = STATE.playerName;
+
+  subscribeTeamSync(code);
+  saveState();
+  updateTeamSetupUI();
+  showToast('Team beigetreten!');
+}
+
+function validateTeamBeforeStart() {
+  if (selectedMode === 'team' && !STATE.teamCode) {
+    showToast('Bitte erst ein Team erstellen oder beitreten!');
+    return false;
+  }
+  return true;
+}
 
 function loadState() {
   try {
@@ -1609,12 +1982,14 @@ function loadState() {
       const parsed = JSON.parse(raw);
       if (!parsed.skipped) parsed.skipped = {};
       if (!parsed.photoGalleries) parsed.photoGalleries = {};
+      if (!parsed.teamCode) parsed.teamCode = '';
       return parsed;
     }
   } catch(e) {}
   return {
     playerName: '',
     mode: '',
+    teamCode: '',
     completed: {},   // { missionId: true }
     answers: {},     // { missionId: string }
     photos: {},      // { missionId: dataURL } — Einzelfoto (Legacy / Standard-Missionen)
@@ -1627,6 +2002,9 @@ function loadState() {
 
 function saveState() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); } catch(e) {}
+  if (!_suppressTeamPush && STATE.mode === 'team' && STATE.teamCode) {
+    pushTeamState();
+  }
   // Galerie-Indikator aktualisieren, falls die App schon vollständig geladen ist
   if (typeof updateGalleryButtonIndicator === 'function') {
     try { updateGalleryButtonIndicator(); } catch(e) {}
@@ -1658,6 +2036,7 @@ let storyAudioPaused = false;
 let storySupported = ('speechSynthesis' in window);
 
 function goToStory() {
+  if (!validateTeamBeforeStart()) return;
   document.getElementById('intro-overlay').style.display = 'none';
   document.getElementById('story-overlay').classList.add('active');
 
@@ -1769,11 +2148,24 @@ function selectMode(m) {
   selectedMode = m;
   document.getElementById('mode-team').classList.toggle('selected', m === 'team');
   document.getElementById('mode-solo').classList.toggle('selected', m === 'solo');
+  if (m === 'solo') {
+    STATE.teamCode = '';
+    unsubscribeTeamSync();
+  }
+  updateTeamSetupUI();
 }
 
 if (STATE.mode) selectMode(STATE.mode);
+if (STATE.teamCode) {
+  subscribeTeamSync(STATE.teamCode);
+  updateTeamSetupUI();
+}
+initFirebase();
+const _nameInputInit = document.getElementById('player-name-input');
+if (_nameInputInit && STATE.playerName) _nameInputInit.value = STATE.playerName;
 
 function startAdventure() {
+  if (!validateTeamBeforeStart()) return;
   stopStoryNarration();
   document.getElementById('story-overlay').classList.remove('active');
 
@@ -2729,6 +3121,7 @@ function closeMissionPopup() {
    COMPLETION
 ====================================================== */
 function showCompletion() {
+  deleteTeamIfComplete();
   const content = document.getElementById('mission-content');
   document.getElementById('audio-bar-area').innerHTML = '';
   document.getElementById('mission-popup').style.display = 'none';
@@ -2752,7 +3145,8 @@ function showCompletion() {
 }
 
 function resetGame() {
-  STATE = { playerName: '', mode: '', completed: {}, answers: {}, photos: {}, gpsStatus: {}, matchResults: {} };
+  unsubscribeTeamSync();
+  STATE = { playerName: '', mode: '', teamCode: '', completed: {}, answers: {}, photos: {}, photoGalleries: {}, gpsStatus: {}, matchResults: {}, skipped: {} };
   saveState();
   location.reload();
 }
@@ -2873,7 +3267,7 @@ function devGoIntro() {
 
 function devReset() {
   if (!confirm('Wirklich alles zurücksetzen? Alle Fortschritte, Fotos und Antworten werden gelöscht.')) return;
-  STATE = { playerName: '', mode: '', completed: {}, answers: {}, photos: {}, gpsStatus: {}, matchResults: {} };
+  STATE = { playerName: '', mode: '', teamCode: '', completed: {}, answers: {}, photos: {}, photoGalleries: {}, gpsStatus: {}, matchResults: {}, skipped: {} };
   saveState();
   closeDevPanel();
   location.reload();
