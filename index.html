@@ -146,7 +146,7 @@
     display: flex; align-items: center; justify-content: center; gap: 4px;
   }
   .gallery-btn-download { background: var(--jungle-l); color: var(--jungle); }
-  .gallery-btn-delete { background: #fdecea; color: var(--danger); }
+  .gallery-btn-delete { background: var(--danger); color: #fff; border: 1px solid #7a2e2e; font-weight: 700; }
   .gallery-empty-state {
     text-align: center; padding: 40px 20px; color: var(--muted);
   }
@@ -159,6 +159,7 @@
 
   /* ===== MAP PROGRESS DISPLAY ===== */
   .map-progress-display { text-align: center; }
+  .map-progress-empty { padding: 32px 16px; opacity: 0.45; }
   .map-progress-image {
     width: 100%; height: auto; display: block;
     border-radius: var(--radius);
@@ -1446,9 +1447,11 @@ function getMapPieceProgress(piece) {
 }
 
 function getCurrentMapImageIndex() {
-  if (getMapPieceProgress(MAP_PIECES[1]).isComplete) return 2;
-  if (getMapPieceProgress(MAP_PIECES[0]).isComplete) return 1;
-  return 0;
+  // Karten-Enthüllung an Story-Meilensteine gebunden (nicht an MAP_PIECES-Fortschritt)
+  if (STATE.completed[30] || currentMissionId >= 30) return 2;
+  if (STATE.completed[17] || currentMissionId >= 17) return 1;
+  if (STATE.completed[5] || currentMissionId >= 5) return 0;
+  return -1;
 }
 
 function openMapModal() {
@@ -1464,6 +1467,10 @@ function renderMapModal() {
   const container = document.getElementById('map-pieces-container');
   if (!container) return;
   const idx = getCurrentMapImageIndex();
+  if (idx < 0) {
+    container.innerHTML = `<div class="map-progress-display map-progress-empty"></div>`;
+    return;
+  }
   container.innerHTML = `<div class="map-progress-display"><img src="${MAP_IMAGES[idx]}" alt="" class="map-progress-image"></div>`;
 }
 
@@ -1534,7 +1541,7 @@ function renderGalleryModal() {
             <div class="gallery-card-title">${p.missionIcon} ${p.missionTitle}</div>
             <div class="gallery-card-actions">
               <button class="gallery-btn-download" onclick="downloadGalleryPhoto(${flatIdx})"> Speichern</button>
-              <button class="gallery-btn-delete" onclick="deletePhotoFromGalleryModal(${flatIdx})"></button>
+              <button class="gallery-btn-delete" onclick="deletePhotoFromGalleryModal(${flatIdx})"> Löschen</button>
             </div>
           </div>
         </div>
