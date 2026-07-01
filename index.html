@@ -11,6 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
 <style>
   /* ===== TOKENS ===== */
@@ -429,12 +430,17 @@
   }
   .certificate-preview .cert-body { font-size: 14px; line-height: 1.65; color: var(--text); margin-bottom: 16px; }
   .certificate-photo-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-    gap: 6px; margin-top: 14px;
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 6px; margin-top: 14px; max-width: 280px;
+    margin-left: auto; margin-right: auto;
   }
   .certificate-photo-grid img {
     width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px;
     border: 1.5px solid var(--paper-border);
+  }
+  .cert-partner-logo {
+    max-width: 120px; max-height: 56px; object-fit: contain;
+    margin: 18px auto 0; display: block; opacity: 0.92;
   }
   .mission-finale .story-box {
     background: linear-gradient(135deg, rgba(184,146,42,0.12), rgba(61,92,69,0.08));
@@ -1144,6 +1150,43 @@ const ANIMAL_POSSESSIVE_PHRASES = [
   'Das Gehege ist auf ihr aktives', 'Wie bei eurem chicen Foto, sind auch die Bartaffen',
 ];
 
+function fixSoloArtifacts(text) {
+  return text
+    .replace(/SIehst DU DAS\?/g, 'Siehst du das?')
+    .replace(/Dich Entdecker/g, 'du, Entdecker')
+    .replace(/\bDu du\b/g, 'Du')
+    .replace(/\bdu du\b/g, 'du')
+    .replace(/\bdich dich\b/g, 'dich')
+    .replace(/\bDich dich\b/g, 'Dich')
+    .replace(/\bdeine deine\b/g, 'deine')
+    .replace(/\bDeine deine\b/g, 'Deine')
+    .replace(/\bdein dein\b/g, 'dein')
+    .replace(/\bdir dir\b/g, 'dir')
+    .replace(/Versucht es nochmal/g, 'Versuche es nochmal')
+    .replace(/Aktiviert GPS und Geh zum/g, 'Aktiviere GPS und geh zum')
+    .replace(/Aktiviert GPS und geht zum/g, 'Aktiviere GPS und geh zum')
+    .replace(/und du geht zur/g, 'und du gehst zur')
+    .replace(/du geht zur/g, 'du gehst zur')
+    .replace(/Geh es weiter/g, 'Geh weiter')
+    .replace(/geh es weiter/g, 'geh weiter')
+    .replace(/Es bleib /g, 'Es bleibt ')
+    .replace(/es bleib /g, 'es bleibt ')
+    .replace(/taucht du nun ab/g, 'tauchst du nun ab')
+    .replace(/Ordne die Tiere deinem/g, 'Ordne die Tiere ihrem')
+    .replace(/für dich Entdecker/g, 'für dich als Entdecker')
+    .replace(/wenn du wollt/g, 'wenn du willst')
+    .replace(/Posiere doch lustig wenn du willst/g, 'Posiere lustig, wenn du willst')
+    .replace(/du abenteuerlustiger Entdecker\./g, 'du abenteuerlustiger Entdecker.')
+    .replace(/du angehender Entdecker sie schützen musst/g, 'du als angehender Entdecker sie schützen musst')
+    .replace(/Stoppe die Uhr, wenn du fertig seid/g, 'Stoppe die Uhr, wenn du fertig bist')
+    .replace(/wenn du fertig seid/g, 'wenn du fertig bist')
+    .replace(/du seid /g, 'du bist ')
+    .replace(/Du seid /g, 'Du bist ')
+    .replace(/Aber du, du bist/g, 'Aber du bist')
+    .replace(/notier hier/g, 'notiere hier')
+    .replace(/Notier hier/g, 'Notiere hier');
+}
+
 function modeText(text) {
   const playMode = STATE.mode || selectedMode || 'team';
   if (!text || playMode !== 'solo') return text;
@@ -1166,11 +1209,12 @@ function modeText(text) {
     .replace(/abenteuerlustigen Entdecker/g, 'abenteuerlustiger Entdecker')
     .replace(/Wusstet ihr/g, 'Wusstest du')
     .replace(/wusstet ihr/g, 'wusstest du')
-    .replace(/SEHT IHR DAS\?/g, 'SIehst DU DAS?')
+    .replace(/SEHT IHR DAS\?/g, 'Siehst du das?')
     .replace(/Seid ihr bereit/g, 'Bist du bereit')
     .replace(/seid ihr bereit/g, 'bist du bereit')
     .replace(/Ihr seid heute hier, weil ihr/g, 'Du bist heute hier, weil du')
     .replace(/Ihr seid nicht nur Schüler, ihr seid/g, 'Du bist nicht nur Schüler, du bist')
+    .replace(/Aber ihr, ihr seid/g, 'Aber du bist')
     .replace(/dürft ihr euch/g, 'darfst du dich')
     .replace(/Dürft ihr euch/g, 'Darfst du dich')
     .replace(/könnt ihr euch/g, 'kannst du dich')
@@ -1178,8 +1222,8 @@ function modeText(text) {
     .replace(/Als Team/g, 'Allein')
     .replace(/eurer Gruppe/g, 'dir selbst')
     .replace(/eurer Meinung/g, 'deiner Meinung')
-    .replace(/Euch Entdecker/g, 'Dich Entdecker')
-    .replace(/euch Entdecker/g, 'dich Entdecker')
+    .replace(/Euch Entdecker/g, 'du, Entdecker')
+    .replace(/euch Entdecker/g, 'du, Entdecker')
     .replace(/Wie bei eurem chicen Foto/g, 'Wie bei deinem schicken Foto')
     .replace(/an eurem Ziel/g, 'an deinem Ziel')
     .replace(/fast an eurem Ziel/g, 'fast an deinem Ziel')
@@ -1194,13 +1238,18 @@ function modeText(text) {
     .replace(/eure Schätzung/g, 'deine Schätzung')
     .replace(/eure Notizen/g, 'deine Notizen')
     .replace(/eure Bilder/g, 'deine Bilder')
+    .replace(/euren Erfolg/g, 'deinen Erfolg')
+    .replace(/Euren Erfolg/g, 'Deinen Erfolg')
+    .replace(/eurem Mut/g, 'deinem Mut')
+    .replace(/eurer Neugier/g, 'deiner Neugier')
+    .replace(/eurem guten Herzen/g, 'deinem guten Herzen')
     .replace(/euer Gruppen/g, 'dein Start')
     .replace(/euer erstes Foto/g, 'dein erstes Foto')
     .replace(/euer Foto/g, 'dein Foto')
     .replace(/Euer Foto/g, 'Dein Foto')
     .replace(/eure Fotos/g, 'deine Fotos')
     .replace(/Eure Fotos/g, 'Deine Fotos')
-    .replace(/für euch Entdecker/g, 'für dich Entdecker')
+    .replace(/für euch Entdecker/g, 'für dich als Entdecker')
     .replace(/für euch bekannt/g, 'für dich bekannt')
     .replace(/für euch/g, 'für dich')
     .replace(/Für euch/g, 'Für dich')
@@ -1215,8 +1264,11 @@ function modeText(text) {
     .replace(/eure /g, 'deine ')
     .replace(/Eure /g, 'Deine ')
     .replace(/euren /g, 'deinen ')
+    .replace(/Euren /g, 'Deinen ')
     .replace(/eurer /g, 'deiner ')
+    .replace(/Eurer /g, 'Deiner ')
     .replace(/eurem /g, 'deinem ')
+    .replace(/Eurem /g, 'Deinem ')
     .replace(/euer /g, 'dein ')
     .replace(/Euer /g, 'Dein ')
     .replace(/Ihr konntet/g, 'Du konntest')
@@ -1233,46 +1285,34 @@ function modeText(text) {
     .replace(/ihr dürft/g, 'du darfst')
     .replace(/Ihr seht/g, 'Du siehst')
     .replace(/ihr seht/g, 'du siehst')
+    .replace(/Ihr wart/g, 'Du warst')
+    .replace(/ihr wart/g, 'du warst')
+    .replace(/Ihr werdet/g, 'Du wirst')
+    .replace(/ihr werdet/g, 'du wirst')
+    .replace(/Aber ihr, ihr seid/g, 'Aber du bist')
     .replace(/Ihr /g, 'Du ')
     .replace(/ihr /g, 'du ')
     .replace(/Schaut /g, 'Schau ')
-    .replace(/schaut /g, 'schau ')
     .replace(/Macht /g, 'Mach ')
-    .replace(/macht /g, 'mach ')
     .replace(/Geht /g, 'Geh ')
-    .replace(/geht /g, 'geh ')
     .replace(/Lauft /g, 'Lauf ')
-    .replace(/lauft /g, 'lauf ')
     .replace(/Findet /g, 'Finde ')
-    .replace(/findet /g, 'finde ')
     .replace(/Schießt /g, 'Schieß ')
-    .replace(/schießt /g, 'schieß ')
     .replace(/Schreibt /g, 'Schreib ')
-    .replace(/schreibt /g, 'schreib ')
     .replace(/Notiert /g, 'Notiere ')
-    .replace(/notiert /g, 'notiere ')
     .replace(/Zeigt /g, 'Zeig ')
-    .replace(/zeigt /g, 'zeig ')
     .replace(/Probiert /g, 'Probiere ')
-    .replace(/probiert /g, 'probiere ')
     .replace(/Testet /g, 'Teste ')
-    .replace(/testet /g, 'teste ')
     .replace(/Entscheidet /g, 'Entscheide ')
     .replace(/Posiert /g, 'Posiere ')
-    .replace(/posiert /g, 'posiere ')
-    .replace(/Bleibt /g, 'Bleib ')
-    .replace(/bleibt /g, 'bleib ')
+    .replace(/Bleibt leise/g, 'Bleib leise')
+    .replace(/bleibt leise/g, 'bleib leise')
     .replace(/Ordnet /g, 'Ordne ')
     .replace(/Zählt /g, 'Zähl ')
-    .replace(/zählt /g, 'zähl ')
     .replace(/Habt /g, 'Hast ')
-    .replace(/habt /g, 'hast ')
     .replace(/Könnt /g, 'Kannst ')
-    .replace(/könnt /g, 'kannst ')
     .replace(/Müsst /g, 'Musst ')
-    .replace(/müsst /g, 'musst ')
     .replace(/Dürft /g, 'Darfst ')
-    .replace(/dürft /g, 'darfst ')
     .replace(/Schafft /g, 'Schaff ')
     .replace(/Spitzt /g, 'Spitz ')
     .replace(/Vergleicht /g, 'Vergleiche ')
@@ -1281,9 +1321,12 @@ function modeText(text) {
     .replace(/Sucht /g, 'Such ')
     .replace(/Tretet /g, 'Tritt ')
     .replace(/Lauscht /g, 'Lausche ')
+    .replace(/Aktiviert GPS und geht zum/g, 'Aktiviere GPS und geh zum')
+    .replace(/ihr geht zur/g, 'du gehst zur')
+    .replace(/und ihr geht/g, 'und du gehst')
     .replace(/Team:/g, 'Name:');
   tokens.forEach(([token, phrase]) => { out = out.replace(token, phrase); });
-  return out;
+  return fixSoloArtifacts(out);
 }
 
 function missionText(m, field) {
@@ -1406,14 +1449,24 @@ function wrapCertText(ctx, text, maxWidth) {
   return lines;
 }
 
-function buildCertificateCanvas(callback) {
-  const photos = getAllPhotosFlat();
-  const W = 1200, H = photos.length ? 1700 : 1400;
-  const canvas = document.createElement('canvas');
-  canvas.id = 'cert-canvas';
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext('2d');
+const CERT_PAGE_W = 1200;
+const CERT_PAGE_H = 1700;
+const CERT_COLS = 3;
+const CERT_CELL = 200;
+const CERT_GAP = 10;
+const CERT_PHOTOS_PAGE1 = 12;
+
+function getCertTexts() {
+  const modeLabel = STATE.mode === 'team' ? 'Team' : 'Solo';
+  return {
+    subtitle: 'MISSION PFOTENKLICK',
+    title: modeText('Teilnehmerurkunde'),
+    name: modeLabel + ': ' + (STATE.playerName || 'Entdecker'),
+    body: modeText('Herzlichen Glückwunsch! Ihr habt alle Missionen gemeistert und den Titel Meister-Entdecker verdient. Diese Urkunde bestätigt euren Erfolg im NaturZoo Rheine.'),
+  };
+}
+
+function drawCertBackground(ctx, W, H) {
   const grad = ctx.createLinearGradient(0, 0, W, H);
   grad.addColorStop(0, '#fffdf8');
   grad.addColorStop(1, '#f5ecd6');
@@ -1424,74 +1477,160 @@ function buildCertificateCanvas(callback) {
   ctx.strokeRect(30, 30, W - 60, H - 60);
   ctx.lineWidth = 2;
   ctx.strokeRect(45, 45, W - 90, H - 90);
+}
+
+function drawCertHeader(ctx, W, texts) {
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#8a6d1e';
+  ctx.font = '700 20px Georgia, serif';
+  ctx.fillText(texts.subtitle, W / 2, 110);
   ctx.fillStyle = '#2a4030';
   ctx.font = '700 52px Georgia, serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('Teilnehmerurkunde', W / 2, 120);
-  ctx.font = '600 22px Georgia, serif';
-  ctx.fillStyle = '#8a6d1e';
-  ctx.fillText('Mission Pfotenklick — NaturZoo Rheine', W / 2, 165);
+  ctx.fillText(texts.title, W / 2, 175);
   ctx.fillStyle = '#3d5c45';
-  ctx.font = '700 38px Georgia, serif';
-  const modeLabel = STATE.mode === 'team' ? 'Team' : 'Solo-Entdecker';
-  ctx.fillText(modeLabel + ': ' + (STATE.playerName || 'Entdecker'), W / 2, 240);
+  ctx.font = '700 34px Georgia, serif';
+  ctx.fillText(texts.name, W / 2, 235);
+  ctx.strokeStyle = '#b8922a';
+  ctx.lineWidth = 2;
+  const nameW = ctx.measureText(texts.name).width + 40;
+  ctx.beginPath();
+  ctx.moveTo(W / 2 - nameW / 2, 250);
+  ctx.lineTo(W / 2 + nameW / 2, 250);
+  ctx.stroke();
   ctx.fillStyle = '#2a241c';
   ctx.font = '22px Georgia, serif';
-  const lines = wrapCertText(ctx, modeText('Herzlichen Glückwunsch! Ihr habt alle Missionen gemeistert und den Titel Meister-Entdecker verdient. Dr. Bartaffe ist beeindruckt von eurem Mut, eurer Neugier und eurem guten Herzen!'), W - 160);
-  lines.forEach((line, i) => ctx.fillText(line, W / 2, 310 + i * 34));
-  let y = 310 + lines.length * 34 + 40;
-  if (photos.length) {
-    ctx.font = '700 24px Georgia, serif';
-    ctx.fillStyle = '#3d5c45';
-    ctx.fillText(modeText('Eure Entdecker-Fotos'), W / 2, y);
-    y += 36;
-    const cols = Math.min(4, photos.length);
-    const cell = Math.min(220, Math.floor((W - 120) / cols) - 12);
-    let idx = 0;
-    const drawNext = () => {
-      if (idx >= photos.length) {
-        ctx.font = '16px Georgia, serif';
-        ctx.fillStyle = '#6b5e4e';
-        ctx.fillText(new Date().toLocaleDateString('de-DE'), W / 2, H - 50);
-        callback(canvas);
-        return;
-      }
-      const col = idx % cols;
-      const row = Math.floor(idx / cols);
-      const x = 60 + col * (cell + 12);
-      const yy = y + row * (cell + 12);
-      const img = new Image();
-      img.onload = () => {
-        ctx.drawImage(img, x, yy, cell, cell);
-        ctx.strokeStyle = '#d4c9b5';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x, yy, cell, cell);
-        idx++;
-        drawNext();
-      };
-      img.onerror = () => { idx++; drawNext(); };
-      img.src = photos[idx].src;
-    };
-    drawNext();
-  } else {
-    ctx.font = '16px Georgia, serif';
-    ctx.fillStyle = '#6b5e4e';
-    ctx.fillText(new Date().toLocaleDateString('de-DE'), W / 2, H - 50);
-    callback(canvas);
+  const lines = wrapCertText(ctx, texts.body, W - 160);
+  lines.forEach((line, i) => ctx.fillText(line, W / 2, 300 + i * 34));
+  return 300 + lines.length * 34 + 36;
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+function drawCertPhotoGrid(ctx, photos, startY, W) {
+  if (!photos.length) return startY;
+  const cols = CERT_COLS;
+  const cell = CERT_CELL;
+  const gap = CERT_GAP;
+  const rows = Math.ceil(photos.length / cols);
+  const gridW = cols * cell + (cols - 1) * gap;
+  const startX = (W - gridW) / 2;
+  photos.forEach((p, idx) => {
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const x = startX + col * (cell + gap);
+    const y = startY + row * (cell + gap);
+    ctx.drawImage(p.img, x, y, cell, cell);
+    ctx.strokeStyle = '#d4c9b5';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, cell, cell);
+  });
+  return startY + rows * (cell + gap) + 20;
+}
+
+function drawCertFooter(ctx, W, H, logoImg) {
+  if (logoImg) {
+    const logoW = 160;
+    const logoH = Math.min(72, logoImg.height * (logoW / logoImg.width));
+    ctx.drawImage(logoImg, W / 2 - logoW / 2, H - 130, logoW, logoH);
   }
+  ctx.font = '16px Georgia, serif';
+  ctx.fillStyle = '#6b5e4e';
+  ctx.textAlign = 'center';
+  ctx.fillText(new Date().toLocaleDateString('de-DE'), W / 2, H - 55);
+}
+
+async function buildCertificatePages() {
+  const allPhotos = getAllPhotosFlat();
+  const texts = getCertTexts();
+  const photoImgs = await Promise.all(allPhotos.map(async (p) => {
+    try { return { img: await loadImage(p.src) }; } catch (e) { return null; }
+  }));
+  const validPhotos = photoImgs.filter(Boolean);
+  let logoImg = null;
+  try { logoImg = await loadImage('assets/partner-logo.png'); } catch (e) {}
+
+  const pages = [];
+  const page1Photos = validPhotos.slice(0, CERT_PHOTOS_PAGE1);
+  const page2Photos = validPhotos.slice(CERT_PHOTOS_PAGE1);
+
+  // Seite 1
+  const canvas1 = document.createElement('canvas');
+  canvas1.width = CERT_PAGE_W;
+  canvas1.height = CERT_PAGE_H;
+  const ctx1 = canvas1.getContext('2d');
+  drawCertBackground(ctx1, CERT_PAGE_W, CERT_PAGE_H);
+  let y1 = drawCertHeader(ctx1, CERT_PAGE_W, texts);
+  y1 = drawCertPhotoGrid(ctx1, page1Photos, y1, CERT_PAGE_W);
+  if (!page2Photos.length) drawCertFooter(ctx1, CERT_PAGE_W, CERT_PAGE_H, logoImg);
+  pages.push(canvas1.toDataURL('image/jpeg', 0.92));
+
+  // Seite 2 (weitere Fotos)
+  if (page2Photos.length) {
+    const canvas2 = document.createElement('canvas');
+    canvas2.width = CERT_PAGE_W;
+    canvas2.height = CERT_PAGE_H;
+    const ctx2 = canvas2.getContext('2d');
+    drawCertBackground(ctx2, CERT_PAGE_W, CERT_PAGE_H);
+    ctx2.textAlign = 'center';
+    ctx2.fillStyle = '#3d5c45';
+    ctx2.font = '700 28px Georgia, serif';
+    ctx2.fillText(modeText('Deine Entdecker-Fotos'), CERT_PAGE_W / 2, 100);
+    drawCertPhotoGrid(ctx2, page2Photos, 130, CERT_PAGE_W);
+    drawCertFooter(ctx2, CERT_PAGE_W, CERT_PAGE_H, logoImg);
+    pages.push(canvas2.toDataURL('image/jpeg', 0.92));
+  }
+
+  return pages;
+}
+
+function buildCertificateCanvas(callback) {
+  buildCertificatePages().then((pages) => {
+    const canvas = document.createElement('canvas');
+    canvas.id = 'cert-canvas';
+    canvas.width = CERT_PAGE_W;
+    canvas.height = CERT_PAGE_H;
+    const img = new Image();
+    img.onload = () => {
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      callback(canvas);
+    };
+    img.src = pages[0];
+  }).catch(() => callback(null));
 }
 
 function downloadCertificate() {
-  buildCertificateCanvas((canvas) => {
-    const a = document.createElement('a');
-    a.href = canvas.toDataURL('image/jpeg', 0.92);
+  buildCertificatePages().then((pages) => {
     const safe = (STATE.playerName || 'entdecker').replace(/[^a-z0-9äöüß]+/gi, '_').toLowerCase();
-    a.download = 'teilnehmerurkunde_' + safe + '.jpg';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    showToast(' Urkunde wird heruntergeladen…');
-  });
+    if (window.jspdf && window.jspdf.jsPDF) {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [CERT_PAGE_W, CERT_PAGE_H], hotfixes: ['px_scaling'] });
+      pages.forEach((dataUrl, i) => {
+        if (i > 0) pdf.addPage([CERT_PAGE_W, CERT_PAGE_H], 'portrait');
+        pdf.addImage(dataUrl, 'JPEG', 0, 0, CERT_PAGE_W, CERT_PAGE_H);
+      });
+      pdf.save('teilnehmerurkunde_' + safe + '.pdf');
+      showToast(pages.length > 1 ? ' PDF-Urkunde mit ' + pages.length + ' Seiten wird heruntergeladen…' : ' PDF-Urkunde wird heruntergeladen…');
+    } else {
+      pages.forEach((dataUrl, i) => {
+        setTimeout(() => {
+          const a = document.createElement('a');
+          a.href = dataUrl;
+          a.download = 'teilnehmerurkunde_' + safe + (pages.length > 1 ? '_seite' + (i + 1) : '') + '.jpg';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }, i * 400);
+      });
+      showToast(' Urkunde wird heruntergeladen…');
+    }
+  }).catch(() => showToast(' Urkunde konnte nicht erstellt werden'));
 }
 
 const MISSIONS = [
@@ -3354,7 +3493,7 @@ function selectChoice(mId, chosen) {
       wrongBtn.classList.add('wrong');
       wrongBtn.disabled = true;
     }
-    if (feedback) { feedback.textContent = modeText(m.wrongMsg) + ' Versucht es nochmal!'; feedback.className = 'text-danger'; }
+    if (feedback) { feedback.textContent = modeText(m.wrongMsg) + ' ' + modeText('Versucht es nochmal!'); feedback.className = 'text-danger'; }
     showToast(' Nicht ganz – versucht es nochmal!');
     setTimeout(() => {
       if (wrongBtn) { wrongBtn.classList.remove('wrong'); wrongBtn.disabled = false; }
@@ -3719,8 +3858,9 @@ function showCompletion() {
           <div class="cert-name">${STATE.mode === 'team' ? 'Team' : 'Solo'}: ${STATE.playerName || 'Entdecker'}</div>
           <div class="cert-body">${modeText('Herzlichen Glückwunsch! Ihr habt alle Missionen gemeistert und den Titel Meister-Entdecker verdient. Diese Urkunde bestätigt euren Erfolg im NaturZoo Rheine.')}</div>
           <div class="certificate-photo-grid" id="cert-photo-grid"></div>
+          <img src="assets/partner-logo.png" alt="Kooperationspartner" class="cert-partner-logo">
         </div>
-        <button class="btn btn-gold" style="margin-top:14px" onclick="downloadCertificate()">${modeText('Urkunde herunterladen')}</button>
+        <button class="btn btn-gold" style="margin-top:14px" onclick="downloadCertificate()">${modeText('Urkunde als PDF herunterladen')}</button>
       </div>
       <button class="btn btn-outline" style="margin-top:10px" onclick="resetGame()">Neues Spiel starten</button>
     </div>
