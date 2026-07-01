@@ -11,7 +11,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
 <style>
   /* ===== TOKENS ===== */
@@ -98,12 +97,12 @@
   .map-btn.has-progress .map-btn-dot { display: block; }
 
   /* ===== MAP / GALLERY MODAL OVERLAY (geteiltes Styling) ===== */
-  #map-modal-overlay, #gallery-modal-overlay {
+  #map-modal-overlay, #gallery-modal-overlay, #cert-download-overlay {
     position: fixed; inset: 0; z-index: 9500; display: none;
     background: rgba(0,0,0,0.55); backdrop-filter: blur(2px);
     align-items: flex-end; justify-content: center;
   }
-  #map-modal-overlay.open, #gallery-modal-overlay.open { display: flex; }
+  #map-modal-overlay.open, #gallery-modal-overlay.open, #cert-download-overlay.open { display: flex; }
   #map-modal, .map-modal-shell {
     width: 100%; max-width: 480px; max-height: 88vh;
     background: var(--bg); border-radius: 24px 24px 0 0;
@@ -442,6 +441,9 @@
     max-width: 120px; max-height: 56px; object-fit: contain;
     margin: 18px auto 0; display: block; opacity: 0.92;
   }
+  .cert-download-btns { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+  .cert-download-btns .btn { width: 100%; justify-content: center; }
+  .cert-download-hint { font-size: 14px; color: var(--muted); line-height: 1.5; margin-bottom: 4px; }
   .mission-finale .story-box {
     background: linear-gradient(135deg, rgba(184,146,42,0.12), rgba(61,92,69,0.08));
     border: 2px solid var(--gold); padding: 20px;
@@ -989,6 +991,21 @@
     </div>
   </div>
 
+  <!-- CERTIFICATE DOWNLOAD MODAL -->
+  <div id="cert-download-overlay" onclick="if(event.target===this) closeCertDownloadModal()">
+    <div id="cert-download-modal" class="map-modal-shell">
+      <div class="map-modal-header-shell">
+        <span style="font-size:22px">📜</span>
+        <h2>Urkunde speichern</h2>
+        <button class="map-close-btn" onclick="closeCertDownloadModal()">✕</button>
+      </div>
+      <div class="map-modal-body-shell">
+        <p class="cert-download-hint" id="cert-download-intro">Wähle die Seite, die du als JPG speichern möchtest:</p>
+        <div id="cert-download-buttons" class="cert-download-btns"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- MAIN SCREEN: current mission -->
   <div class="screen active" id="screen-map">
     <div id="audio-bar-area"></div>
@@ -1150,6 +1167,24 @@ const ANIMAL_POSSESSIVE_PHRASES = [
   'Das Gehege ist auf ihr aktives', 'Wie bei eurem chicen Foto, sind auch die Bartaffen',
 ];
 
+const SOLO_PHRASE_FIXES = [
+  ['Ihr seid echte Meister-Entdecker', 'Du bist ein echter Meister-Entdecker'],
+  ['Ihr seid nicht nur Schüler, ihr seid die Besten der Allerbesten', 'Du bist nicht nur Schüler, du bist einer der Besten der Allerbesten'],
+  ['Ihr seid heute hier, weil ihr Mut im Herzen und Scharfsinn im Kopf habt', 'Du bist heute hier, weil du Mut im Herzen und Scharfsinn im Kopf hast'],
+  ['dürft ihr euch offiziell Meister-Entdecker nennen', 'darfst du dich offiziell Meister-Entdecker nennen'],
+  ['ihr seid guten Herzens', 'du hast ein gutes Herz'],
+  ['Ihr seid guten Herzens', 'Du hast ein gutes Herz'],
+  ['ihr seid wirkliche Meister–Entdecker', 'du bist ein wirklicher Meister-Entdecker'],
+  ['ihr seid wirkliche Meister-Entdecker', 'du bist ein wirklicher Meister-Entdecker'],
+  ['ihr, ihr seid doch ziemlich kluge Leute', 'du bist ziemlich klug'],
+  ['ihr seid doch ziemlich kluge Leute', 'du bist ziemlich klug'],
+  ['ihr seid fast an eurem Ziel', 'du bist fast an deinem Ziel'],
+  ['ihr seid fast da', 'du bist fast da'],
+  ['Ihr seid fast da', 'Du bist fast da'],
+  ['wenn ihr fertig seid', 'wenn du fertig bist'],
+  ['und ihr geht zur nächsten Mission', 'und du gehst zur nächsten Mission'],
+];
+
 function fixSoloArtifacts(text) {
   return text
     .replace(/SIehst DU DAS\?/g, 'Siehst du das?')
@@ -1190,7 +1225,20 @@ function fixSoloArtifacts(text) {
     .replace(/Entdeckdein/g, 'Entdecken')
     .replace(/Fdein/g, 'Feuer')
     .replace(/Stddein/g, 'Steuer')
-    .replace(/Tdein/g, 'Teuer');
+    .replace(/Tdein/g, 'Teuer')
+    .replace(/Du bist echte /g, 'Du bist ein echter ')
+    .replace(/du bist echte /g, 'du bist ein echter ')
+    .replace(/Du bist wirkliche /g, 'Du bist ein wirklicher ')
+    .replace(/du bist wirkliche /g, 'du bist ein wirklicher ')
+    .replace(/Du bist die Besten/g, 'Du bist einer der Besten')
+    .replace(/du bist die Besten/g, 'du bist einer der Besten')
+    .replace(/Du bist nicht nur Schüler, du bist die Besten/g, 'Du bist nicht nur Schüler, du bist einer der Besten')
+    .replace(/Du bist ziemlich kluge Leute/g, 'Du bist ziemlich klug')
+    .replace(/du bist ziemlich kluge Leute/g, 'du bist ziemlich klug')
+    .replace(/Du bist guten Herzens/g, 'Du hast ein gutes Herz')
+    .replace(/du bist guten Herzens/g, 'du hast ein gutes Herz')
+    .replace(/Du hast alle Missionen erfolgreich gemeistert/g, 'Du hast alle Missionen erfolgreich gemeistert')
+    .replace(/du hast Mut im Herzen und Scharfsinn im Kopf habt/g, 'du hast Mut im Herzen und Scharfsinn im Kopf');
 }
 
 function modeText(text) {
@@ -1204,6 +1252,9 @@ function modeText(text) {
       protectedText = protectedText.split(phrase).join(token);
       tokens.push([token, phrase]);
     }
+  });
+  SOLO_PHRASE_FIXES.forEach(([from, to]) => {
+    protectedText = protectedText.split(from).join(to);
   });
   let out = protectedText
     .replace(/Gruppenfoto/g, 'Startfoto')
@@ -1574,45 +1625,79 @@ function stitchCertPages(pages) {
   });
 }
 
-function ensureJsPDF() {
-  if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
-  const existing = document.querySelector('script[src*="jspdf"]');
-  if (existing) {
-    return new Promise((resolve, reject) => {
-      const done = () => {
-        if (window.jspdf && window.jspdf.jsPDF) resolve(window.jspdf.jsPDF);
-        else reject(new Error('jsPDF nicht verfügbar'));
-      };
-      if (existing.dataset.loaded === '1') { done(); return; }
-      existing.addEventListener('load', () => { existing.dataset.loaded = '1'; done(); });
-      existing.addEventListener('error', () => reject(new Error('jsPDF Script-Fehler')));
-      setTimeout(done, 2500);
-    });
-  }
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
-    s.onload = () => {
-      s.dataset.loaded = '1';
-      if (window.jspdf && window.jspdf.jsPDF) resolve(window.jspdf.jsPDF);
-      else reject(new Error('jsPDF nicht geladen'));
-    };
-    s.onerror = () => reject(new Error('jsPDF Script-Fehler'));
-    document.head.appendChild(s);
-  });
+let _certPagesCache = [];
+
+function getCertDownloadLabels() {
+  const name = STATE.playerName || 'Entdecker';
+  return [
+    'Teil 1 — Urkunde (' + name + ')',
+    'Teil 2 — Entdecker-Fotos (' + name + ')',
+  ];
 }
 
-async function compressPageForPdf(dataUrl) {
-  const img = await loadImage(dataUrl);
-  const maxW = 820;
-  const scale = Math.min(1, maxW / img.width);
-  const w = Math.round(img.width * scale);
-  const h = Math.round(img.height * scale);
-  const c = document.createElement('canvas');
-  c.width = w;
-  c.height = h;
-  c.getContext('2d').drawImage(img, 0, 0, w, h);
-  return c.toDataURL('image/jpeg', 0.82);
+async function openCertDownloadModal() {
+  const overlay = document.getElementById('cert-download-overlay');
+  const container = document.getElementById('cert-download-buttons');
+  const intro = document.getElementById('cert-download-intro');
+  if (!overlay || !container) return;
+
+  container.innerHTML = '<p style="text-align:center;color:var(--muted);padding:12px">Urkunde wird vorbereitet…</p>';
+  overlay.classList.add('open');
+  showToast(' Urkunde wird vorbereitet…');
+
+  try {
+    _certPagesCache = await buildCertificatePages();
+    const labels = getCertDownloadLabels();
+    const safe = (STATE.playerName || 'entdecker').replace(/[^a-z0-9äöüß]+/gi, '_').toLowerCase();
+
+    if (intro) {
+      if (_certPagesCache.length > 1) {
+        intro.textContent = STATE.mode === 'team'
+          ? 'Wählt die Seite, die ihr als JPG speichern möchtet:'
+          : 'Wähle die Seite, die du als JPG speichern möchtest:';
+      } else {
+        intro.textContent = STATE.mode === 'team'
+          ? 'Speichert eure Urkunde als JPG:'
+          : 'Speichere deine Urkunde als JPG:';
+      }
+    }
+
+    container.innerHTML = _certPagesCache.map((_, i) => {
+      const label = labels[i] || ('Teil ' + (i + 1) + ' (' + (STATE.playerName || 'Entdecker') + ')');
+      return `<button type="button" class="btn btn-gold" onclick="downloadCertPage(${i})">${label}</button>`;
+    }).join('');
+
+    window._certDownloadSafeName = safe;
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = '<p style="color:var(--danger);text-align:center">Urkunde konnte nicht erstellt werden.</p>';
+    showToast(' Urkunde konnte nicht erstellt werden');
+  }
+}
+
+function downloadCertPage(index) {
+  const dataUrl = _certPagesCache[index];
+  if (!dataUrl) {
+    showToast(' Diese Seite ist noch nicht bereit');
+    return;
+  }
+  const safe = window._certDownloadSafeName || 'entdecker';
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = 'teilnehmerurkunde_' + safe + '_teil' + (index + 1) + '.jpg';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast(' Teil ' + (index + 1) + ' wird heruntergeladen…');
+}
+
+function closeCertDownloadModal() {
+  const overlay = document.getElementById('cert-download-overlay');
+  if (overlay) overlay.classList.remove('open');
+}
+
+function downloadCertificate() {
+  openCertDownloadModal();
 }
 
 async function buildCertificatePages() {
@@ -1672,32 +1757,6 @@ function buildCertificateCanvas(callback) {
     };
     img.src = pages[0];
   }).catch(() => callback(null));
-}
-
-async function downloadCertificate() {
-  showToast(' PDF wird erstellt…');
-  try {
-    const pages = await buildCertificatePages();
-    const safe = (STATE.playerName || 'entdecker').replace(/[^a-z0-9äöüß]+/gi, '_').toLowerCase();
-    const JsPDF = await ensureJsPDF();
-    const pdf = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
-    const pw = pdf.internal.pageSize.getWidth();
-    const ph = pdf.internal.pageSize.getHeight();
-
-    for (let i = 0; i < pages.length; i++) {
-      const compressed = await compressPageForPdf(pages[i]);
-      if (i > 0) pdf.addPage();
-      pdf.addImage(compressed, 'JPEG', 0, 0, pw, ph, undefined, 'FAST');
-    }
-
-    pdf.save('teilnehmerurkunde_' + safe + '.pdf');
-    showToast(pages.length > 1
-      ? ' PDF mit ' + pages.length + ' Seiten wird heruntergeladen…'
-      : ' PDF wird heruntergeladen…');
-  } catch (e) {
-    console.error('PDF export failed:', e);
-    showToast(' PDF konnte nicht erstellt werden — bitte erneut versuchen.');
-  }
 }
 
 const MISSIONS = [
@@ -3927,7 +3986,7 @@ function showCompletion() {
           <div class="certificate-photo-grid" id="cert-photo-grid"></div>
           <img src="assets/partner-logo.png" alt="Kooperationspartner" class="cert-partner-logo">
         </div>
-        <button class="btn btn-gold" style="margin-top:14px" onclick="downloadCertificate()">${modeText('Urkunde als PDF herunterladen')}</button>
+        <button class="btn btn-gold" style="margin-top:14px" onclick="downloadCertificate()">${modeText('Urkunde herunterladen')}</button>
       </div>
       <button class="btn btn-outline" style="margin-top:10px" onclick="resetGame()">Neues Spiel starten</button>
     </div>
