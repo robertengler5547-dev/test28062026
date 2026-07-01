@@ -1184,7 +1184,13 @@ function fixSoloArtifacts(text) {
     .replace(/Du seid /g, 'Du bist ')
     .replace(/Aber du, du bist/g, 'Aber du bist')
     .replace(/notier hier/g, 'notiere hier')
-    .replace(/Notier hier/g, 'Notiere hier');
+    .replace(/Notier hier/g, 'Notiere hier')
+    .replace(/Abentdein/g, 'Abenteuer')
+    .replace(/abentdein/g, 'abenteuer')
+    .replace(/Entdeckdein/g, 'Entdecken')
+    .replace(/Fdein/g, 'Feuer')
+    .replace(/Stddein/g, 'Steuer')
+    .replace(/Tdein/g, 'Teuer');
 }
 
 function modeText(text) {
@@ -1259,18 +1265,18 @@ function modeText(text) {
     .replace(/zu euch/g, 'zu dir')
     .replace(/bei euch/g, 'bei dir')
     .replace(/Neben euch/g, 'Neben dir')
-    .replace(/euch /g, 'dich ')
-    .replace(/Euch /g, 'Dich ')
-    .replace(/eure /g, 'deine ')
-    .replace(/Eure /g, 'Deine ')
-    .replace(/euren /g, 'deinen ')
-    .replace(/Euren /g, 'Deinen ')
-    .replace(/eurer /g, 'deiner ')
-    .replace(/Eurer /g, 'Deiner ')
-    .replace(/eurem /g, 'deinem ')
-    .replace(/Eurem /g, 'Deinem ')
-    .replace(/euer /g, 'dein ')
-    .replace(/Euer /g, 'Dein ')
+    .replace(/\beuch\b/g, 'dich')
+    .replace(/\bEuch\b/g, 'Dich')
+    .replace(/\beure\b/g, 'deine')
+    .replace(/\bEure\b/g, 'Deine')
+    .replace(/\beuren\b/g, 'deinen')
+    .replace(/\bEuren\b/g, 'Deinen')
+    .replace(/\beurer\b/g, 'deiner')
+    .replace(/\bEurer\b/g, 'Deiner')
+    .replace(/\beurem\b/g, 'deinem')
+    .replace(/\bEurem\b/g, 'Deinem')
+    .replace(/\beuer\b/g, 'dein')
+    .replace(/\bEuer\b/g, 'Dein')
     .replace(/Ihr konntet/g, 'Du konntest')
     .replace(/ihr konntet/g, 'du konntest')
     .replace(/Ihr habt/g, 'Du hast')
@@ -1290,8 +1296,8 @@ function modeText(text) {
     .replace(/Ihr werdet/g, 'Du wirst')
     .replace(/ihr werdet/g, 'du wirst')
     .replace(/Aber ihr, ihr seid/g, 'Aber du bist')
-    .replace(/Ihr /g, 'Du ')
-    .replace(/ihr /g, 'du ')
+    .replace(/\bihr\b/g, 'du')
+    .replace(/\bIhr\b/g, 'Du')
     .replace(/Schaut /g, 'Schau ')
     .replace(/Macht /g, 'Mach ')
     .replace(/Geht /g, 'Geh ')
@@ -1568,6 +1574,47 @@ function stitchCertPages(pages) {
   });
 }
 
+function ensureJsPDF() {
+  if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+  const existing = document.querySelector('script[src*="jspdf"]');
+  if (existing) {
+    return new Promise((resolve, reject) => {
+      const done = () => {
+        if (window.jspdf && window.jspdf.jsPDF) resolve(window.jspdf.jsPDF);
+        else reject(new Error('jsPDF nicht verfügbar'));
+      };
+      if (existing.dataset.loaded === '1') { done(); return; }
+      existing.addEventListener('load', () => { existing.dataset.loaded = '1'; done(); });
+      existing.addEventListener('error', () => reject(new Error('jsPDF Script-Fehler')));
+      setTimeout(done, 2500);
+    });
+  }
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
+    s.onload = () => {
+      s.dataset.loaded = '1';
+      if (window.jspdf && window.jspdf.jsPDF) resolve(window.jspdf.jsPDF);
+      else reject(new Error('jsPDF nicht geladen'));
+    };
+    s.onerror = () => reject(new Error('jsPDF Script-Fehler'));
+    document.head.appendChild(s);
+  });
+}
+
+async function compressPageForPdf(dataUrl) {
+  const img = await loadImage(dataUrl);
+  const maxW = 820;
+  const scale = Math.min(1, maxW / img.width);
+  const w = Math.round(img.width * scale);
+  const h = Math.round(img.height * scale);
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  c.getContext('2d').drawImage(img, 0, 0, w, h);
+  return c.toDataURL('image/jpeg', 0.82);
+}
+
 async function buildCertificatePages() {
   const allPhotos = getAllPhotosFlat();
   const texts = getCertTexts();
@@ -1628,44 +1675,28 @@ function buildCertificateCanvas(callback) {
 }
 
 async function downloadCertificate() {
-  showToast(' Urkunde wird erstellt…');
+  showToast(' PDF wird erstellt…');
   try {
     const pages = await buildCertificatePages();
     const safe = (STATE.playerName || 'entdecker').replace(/[^a-z0-9äöüß]+/gi, '_').toLowerCase();
+    const JsPDF = await ensureJsPDF();
+    const pdf = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+    const pw = pdf.internal.pageSize.getWidth();
+    const ph = pdf.internal.pageSize.getHeight();
 
-    if (window.jspdf && window.jspdf.jsPDF) {
-      try {
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pw = pdf.internal.pageSize.getWidth();
-        const ph = pdf.internal.pageSize.getHeight();
-        pages.forEach((dataUrl, i) => {
-          if (i > 0) pdf.addPage();
-          pdf.addImage(dataUrl, 'JPEG', 0, 0, pw, ph, undefined, 'MEDIUM');
-        });
-        pdf.save('teilnehmerurkunde_' + safe + '.pdf');
-        showToast(pages.length > 1
-          ? ' PDF-Urkunde mit ' + pages.length + ' Seiten wird heruntergeladen…'
-          : ' PDF-Urkunde wird heruntergeladen…');
-        return;
-      } catch (pdfErr) {
-        console.warn('jsPDF export failed, using image fallback', pdfErr);
-      }
+    for (let i = 0; i < pages.length; i++) {
+      const compressed = await compressPageForPdf(pages[i]);
+      if (i > 0) pdf.addPage();
+      pdf.addImage(compressed, 'JPEG', 0, 0, pw, ph, undefined, 'FAST');
     }
 
-    const combined = await stitchCertPages(pages);
-    const a = document.createElement('a');
-    a.href = combined;
-    a.download = 'teilnehmerurkunde_' + safe + (pages.length > 1 ? '_alle_seiten' : '') + '.jpg';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    pdf.save('teilnehmerurkunde_' + safe + '.pdf');
     showToast(pages.length > 1
-      ? ' Urkunde mit allen ' + pages.length + ' Seiten wird heruntergeladen…'
-      : ' Urkunde wird heruntergeladen…');
+      ? ' PDF mit ' + pages.length + ' Seiten wird heruntergeladen…'
+      : ' PDF wird heruntergeladen…');
   } catch (e) {
-    console.error(e);
-    showToast(' Urkunde konnte nicht erstellt werden');
+    console.error('PDF export failed:', e);
+    showToast(' PDF konnte nicht erstellt werden — bitte erneut versuchen.');
   }
 }
 
