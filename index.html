@@ -1535,15 +1535,37 @@ function drawCertPhotoGrid(ctx, photos, startY, W) {
 }
 
 function drawCertFooter(ctx, W, H, logoImg) {
-  if (logoImg) {
-    const logoW = 160;
-    const logoH = Math.min(72, logoImg.height * (logoW / logoImg.width));
-    ctx.drawImage(logoImg, W / 2 - logoW / 2, H - 130, logoW, logoH);
-  }
+  const dateY = H - 52;
   ctx.font = '16px Georgia, serif';
   ctx.fillStyle = '#6b5e4e';
   ctx.textAlign = 'center';
-  ctx.fillText(new Date().toLocaleDateString('de-DE'), W / 2, H - 55);
+  ctx.fillText(new Date().toLocaleDateString('de-DE'), W / 2, dateY);
+
+  if (logoImg) {
+    const nw = logoImg.naturalWidth || logoImg.width || 1;
+    const nh = logoImg.naturalHeight || logoImg.height || 1;
+    const maxW = 130;
+    const maxH = 52;
+    const scale = Math.min(maxW / nw, maxH / nh);
+    const logoW = nw * scale;
+    const logoH = nh * scale;
+    const gap = 16;
+    const logoY = dateY - logoH - gap - 12;
+    ctx.drawImage(logoImg, W / 2 - logoW / 2, logoY, logoW, logoH);
+  }
+}
+
+function stitchCertPages(pages) {
+  if (pages.length <= 1) return Promise.resolve(pages[0]);
+  const totalH = CERT_PAGE_H * pages.length;
+  const canvas = document.createElement('canvas');
+  canvas.width = CERT_PAGE_W;
+  canvas.height = totalH;
+  const ctx = canvas.getContext('2d');
+  return Promise.all(pages.map((src) => loadImage(src))).then((imgs) => {
+    imgs.forEach((img, i) => ctx.drawImage(img, 0, i * CERT_PAGE_H, CERT_PAGE_W, CERT_PAGE_H));
+    return canvas.toDataURL('image/jpeg', 0.9);
+  });
 }
 
 async function buildCertificatePages() {
@@ -1605,32 +1627,46 @@ function buildCertificateCanvas(callback) {
   }).catch(() => callback(null));
 }
 
-function downloadCertificate() {
-  buildCertificatePages().then((pages) => {
+async function downloadCertificate() {
+  showToast(' Urkunde wird erstellt…');
+  try {
+    const pages = await buildCertificatePages();
     const safe = (STATE.playerName || 'entdecker').replace(/[^a-z0-9äöüß]+/gi, '_').toLowerCase();
+
     if (window.jspdf && window.jspdf.jsPDF) {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [CERT_PAGE_W, CERT_PAGE_H], hotfixes: ['px_scaling'] });
-      pages.forEach((dataUrl, i) => {
-        if (i > 0) pdf.addPage([CERT_PAGE_W, CERT_PAGE_H], 'portrait');
-        pdf.addImage(dataUrl, 'JPEG', 0, 0, CERT_PAGE_W, CERT_PAGE_H);
-      });
-      pdf.save('teilnehmerurkunde_' + safe + '.pdf');
-      showToast(pages.length > 1 ? ' PDF-Urkunde mit ' + pages.length + ' Seiten wird heruntergeladen…' : ' PDF-Urkunde wird heruntergeladen…');
-    } else {
-      pages.forEach((dataUrl, i) => {
-        setTimeout(() => {
-          const a = document.createElement('a');
-          a.href = dataUrl;
-          a.download = 'teilnehmerurkunde_' + safe + (pages.length > 1 ? '_seite' + (i + 1) : '') + '.jpg';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        }, i * 400);
-      });
-      showToast(' Urkunde wird heruntergeladen…');
+      try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pw = pdf.internal.pageSize.getWidth();
+        const ph = pdf.internal.pageSize.getHeight();
+        pages.forEach((dataUrl, i) => {
+          if (i > 0) pdf.addPage();
+          pdf.addImage(dataUrl, 'JPEG', 0, 0, pw, ph, undefined, 'MEDIUM');
+        });
+        pdf.save('teilnehmerurkunde_' + safe + '.pdf');
+        showToast(pages.length > 1
+          ? ' PDF-Urkunde mit ' + pages.length + ' Seiten wird heruntergeladen…'
+          : ' PDF-Urkunde wird heruntergeladen…');
+        return;
+      } catch (pdfErr) {
+        console.warn('jsPDF export failed, using image fallback', pdfErr);
+      }
     }
-  }).catch(() => showToast(' Urkunde konnte nicht erstellt werden'));
+
+    const combined = await stitchCertPages(pages);
+    const a = document.createElement('a');
+    a.href = combined;
+    a.download = 'teilnehmerurkunde_' + safe + (pages.length > 1 ? '_alle_seiten' : '') + '.jpg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast(pages.length > 1
+      ? ' Urkunde mit allen ' + pages.length + ' Seiten wird heruntergeladen…'
+      : ' Urkunde wird heruntergeladen…');
+  } catch (e) {
+    console.error(e);
+    showToast(' Urkunde konnte nicht erstellt werden');
+  }
 }
 
 const MISSIONS = [
